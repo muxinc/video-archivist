@@ -1,8 +1,8 @@
-import { ConnectionManager, getConnectionManager } from 'typeorm';
+import { ConnectionManager, ConnectionOptions, getConnectionManager } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { buildServer } from './server'
 
-import ormconfig from './ormconfig';
+const ormconfig: ConnectionOptions = require('./ormconfig');
 
 (async () => {
   const server = await buildServer({

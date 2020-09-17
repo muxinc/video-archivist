@@ -5,7 +5,7 @@ import HapiInert from '@hapi/inert';
 import HapiVision from '@hapi/vision';
 import * as HapiTypeorm from 'hapi-typeorm';
 
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { ConnectionOptions } from 'typeorm';
 
 import { attachRoutes } from './routes';
 import { DataService } from './DataService';
@@ -16,7 +16,7 @@ export type AppOptions = {
   hapi: Hapi.ServerOptions,
   
   githubWebhookSecret: string,
-  dbOptions: PostgresConnectionOptions,
+  dbOptions: ConnectionOptions,
   prettyPrintLogs: boolean | undefined,
 }
 

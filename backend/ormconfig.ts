@@ -1,6 +1,6 @@
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { ConnectionOptions } from 'typeorm';
 
-const dbOptions: PostgresConnectionOptions = {
+const dbOptions: ConnectionOptions = {
   type: 'postgres',
   
   host: process.env.DB_HOST,
@@ -13,4 +13,4 @@ const dbOptions: PostgresConnectionOptions = {
   entities: [`${__dirname}/db/entities`],
 };
 
-export default dbOptions;
+module.exports = dbOptions;
