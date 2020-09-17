@@ -1,0 +1,8 @@
+{
+    "private": true,
+    "scripts": {
+        "dev:up": "docker-compose up --build --remove-orphans",
+        "dev:down": "docker-compose down",
+        "dev:reset": "yarn run -s dev:down && yarn run -s dev:up"
+    }
+}

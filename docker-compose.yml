@@ -1,0 +1,10 @@
+version: "2.4"
+
+services:
+  db:
+    image: "postgres:11.2-alpine"
+    environment:
+      POSTGRES_USER: devdb
+      POSTGRES_PASSWORD: devdb
+    ports:
+      - 25432:5432/tcp
