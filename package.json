@@ -3,6 +3,7 @@
     "scripts": {
         "dev:up": "docker-compose up --build --remove-orphans",
         "dev:down": "docker-compose down",
-        "dev:reset": "yarn run -s dev:down && yarn run -s dev:up"
+        "dev:reset": "yarn run -s dev:down && yarn run -s dev:up",
+        "dev:db": "PGPASSWORD=devdb psql -h localhost -p 25432 -U devdb"
     }
 }

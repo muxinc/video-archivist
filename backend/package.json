@@ -35,6 +35,7 @@
     "pg": "^8.3.3",
     "pino": "^6.6.1",
     "reflect-metadata": "^0.1.13",
-    "typeorm": "^0.2.26"
+    "typeorm": "^0.2.26",
+    "typeorm-naming-strategies": "^2.0.0"
   }
 }

@@ -1,4 +1,7 @@
+import * as Path from 'path';
+
 import { ConnectionOptions } from 'typeorm';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 const dbOptions: ConnectionOptions = {
   type: 'postgres',
@@ -9,8 +12,23 @@ const dbOptions: ConnectionOptions = {
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
 
-  migrations: [`${__dirname}/db/migrations`],
-  entities: [`${__dirname}/db/entities`],
+  migrations: [
+    Path.resolve(__dirname, 'db', 'migrations', '*.{ts,js}'),
+  ],
+  entities: [
+    Path.resolve(__dirname, '**', '*.entity.{ts,js}'),
+  ],
+
+  cli: {
+    migrationsDir: `./db/migrations`,
+    entitiesDir: `./db/entities`,
+  },
+
+  logging: true,
+  synchronize: false,
+  migrationsRun: process.env.NO_MIGRATIONS !== '1',
+
+  namingStrategy: new SnakeNamingStrategy(),
 };
 
 module.exports = dbOptions;
