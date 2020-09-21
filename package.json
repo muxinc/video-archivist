@@ -5,9 +5,11 @@
         "dev:svc-down": "docker-compose down",
         "dev:svc-reset": "yarn run -s dev:down && yarn run -s dev:up",
         "dev:connect-db": "PGPASSWORD=devdb psql -h localhost -p 25432 -U devdb",
-        "dev:http-tunnel": "yarn && yarn exec -s ngrok http 13000"
+        "dev:http-tunnel": "yarn && yarn exec -s ngrok http 13000",
+        "dev:http-tunnel:hostname": "node ./scripts/get-ngrok-hostname 13000"
     },
     "devDependencies": {
+        "json": "^10.0.0",
         "ngrok": "^3.3.0"
     }
 }

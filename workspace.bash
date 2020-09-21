@@ -20,7 +20,8 @@ tmux \
   split-window -h "yarn run -s dev:http-tunnel; \"$SHELL\"" \; \
   split-window -v "yarn run -s dev:svc-${SVC_CMD}; \"$SHELL\"" \; \
   resize-pane -t 1 -y 20 \; \
-  split-window -v -t 0
+  split-window -v -t 0 \; \
+  send-keys 'sleep 2; export REMOTE_HOST=$(yarn run -s dev:http-tunnel:hostname)' Enter
 
 # cleans up after users if they spam ctrl-C (the natural inclination)
 tmux kill-session || true
