@@ -21,7 +21,9 @@ export type AppOptions = {
 }
 
 export async function buildServer(opts: AppOptions): Promise<Hapi.Server> {
-  const server = Hapi.server(opts.hapi);
+  const server = Hapi.server({
+    ...opts.hapi,
+  });
   
   await attachPreMiddlewares(server, opts);
   await attachRoutes(server, opts);

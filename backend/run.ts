@@ -6,7 +6,9 @@ const ormconfig: ConnectionOptions = require('./ormconfig');
 
 (async () => {
   const server = await buildServer({
-    hapi: {},
+    hapi: {
+      port: 13000,
+    },
     
     githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET || 'FAKE',
     prettyPrintLogs: true,

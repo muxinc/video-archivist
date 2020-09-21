@@ -1,3 +1,4 @@
+import Joi from 'joi';
 import {Column, CreateDateColumn, Entity, Index, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
 
 import { Video } from './Video.entity';
@@ -32,5 +33,10 @@ export class Repo {
       referencedColumnName: 'id',
     },
   })
-  videos!: Array<Video> | null; 
+  videos!: Array<Video> | null;
+
+  static RepoDTO = Joi.object({
+    organizationName: Joi.string(),
+    repositoryName: Joi.string(),
+  }).options({ presence: 'required' }).label('RepoDTO');
 }
