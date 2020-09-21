@@ -4,6 +4,7 @@ import 'hapi-typeorm';
 import { Connection, Repository } from 'typeorm';
 import { Repo } from './db/entities/Repo.entity';
 import { Video } from './db/entities/Video.entity';
+import { GithubWebhookPayloads } from './types';
 
 declare module '@hapi/hapi' {
   interface Request {
@@ -43,6 +44,7 @@ export class DataService {
   async getVideo(videoId: string): Promise<Video | undefined> {
     return this.videos.findOne({ id: videoId });
   }
+
     
   public static readonly hapiPlugin: Plugin<{}> = {
     name: 'data-service',

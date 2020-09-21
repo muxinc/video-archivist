@@ -3,7 +3,7 @@
     "scripts": {
         "dev:svc-up": "docker-compose up --build --remove-orphans",
         "dev:svc-down": "docker-compose down",
-        "dev:svc-reset": "yarn run -s dev:down && yarn run -s dev:up",
+        "dev:svc-reset": "yarn run -s dev:svc-down && yarn run -s dev:svc-up",
         "dev:connect-db": "PGPASSWORD=devdb psql -h localhost -p 25432 -U devdb",
         "dev:http-tunnel": "yarn && yarn exec -s ngrok http 13000",
         "dev:http-tunnel:hostname": "node ./scripts/get-ngrok-hostname 13000"

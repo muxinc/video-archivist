@@ -10,12 +10,9 @@ import { ConnectionOptions } from 'typeorm';
 import { attachRoutes } from './routes';
 import { DataService } from './DataService';
 
-const GithubWebhooksPlugin = require('hapi-github-webhooks');
-
 export type AppOptions = {
   hapi: Hapi.ServerOptions,
   
-  githubWebhookSecret: string,
   dbOptions: ConnectionOptions,
   prettyPrintLogs: boolean | undefined,
 }
@@ -33,9 +30,6 @@ export async function buildServer(opts: AppOptions): Promise<Hapi.Server> {
 }
 
 async function attachPreMiddlewares(server: Hapi.Server, opts: AppOptions) {
-  await server.register(GithubWebhooksPlugin);
-  server.auth.strategy('githubwebhook', 'githubwebhook', { secret: opts.githubWebhookSecret });
-
   await server.register(DataService.hapiPlugin);
   
   await server.register([{

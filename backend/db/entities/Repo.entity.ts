@@ -21,6 +21,9 @@ export class Repo {
   @UpdateDateColumn({ nullable: true })
   updatedAt!: Date | null;
 
+  @Column()
+  webhookSecret!: string;
+
   @ManyToMany(type => Video)
   @JoinTable({
     name: 'repo_videos',

@@ -5,6 +5,11 @@ import { Repo } from './db/entities/Repo.entity';
 import { Video } from './db/entities/Video.entity';
 import { responseWith } from './helpers';
 import { AppOptions } from './server';
+import {
+  GITHUB_WEBHOOK_SIGNATURE_HEADER,
+  verifyWebhookPayloadAgainstRepos,
+} from './github-utils';
+import { GithubWebhookPayloads } from './types';
 
 export async function attachRoutes(server: Hapi.Server, opts: AppOptions) {
   server.route({
@@ -75,12 +80,34 @@ export async function attachRoutes(server: Hapi.Server, opts: AppOptions) {
     method: 'POST',
     path: '/webhooks/github',
     options: {
-      auth: {
-        strategies: ['githubwebhook'],
-        payload: 'required',
+      payload: {
+        parse: false, // payload will be a buffer
       },
     },
-    handler: async function() {
+    handler: async function(req, h) {
+      // we have to do this in order to validate the payload via github signing.
+      const buffer = req.payload as Buffer;
+      const bufferAsString = buffer.toString('utf-8');
+
+      // this is a minor crime but it's fine
+      const githubPayload: GithubWebhookPayloads = JSON.parse(bufferAsString);
+
+      console.log(req.headers);
+
+      const isVerified = await verifyWebhookPayloadAgainstRepos(
+        req.logger,
+        req.getDataService(),
+        githubPayload,
+        buffer,
+        req.headers[GITHUB_WEBHOOK_SIGNATURE_HEADER],
+      );
+      if (!isVerified) {
+        return h.response({ error: 401, message: 'Webhook unvalidated.' }).code(401);
+      }
+
+      console.info("WE GOT ONE")
+      console.info(githubPayload);
+
       return '';
     }
   })

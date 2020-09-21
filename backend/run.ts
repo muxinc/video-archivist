@@ -10,7 +10,6 @@ const ormconfig: ConnectionOptions = require('./ormconfig');
       port: 13000,
     },
     
-    githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET || 'FAKE',
     prettyPrintLogs: true,
     dbOptions: ormconfig, 
   });
