@@ -16,7 +16,6 @@
     "@types/hapi__vision": "^5.5.1",
     "@types/node": "^14.10.3",
     "@types/pino": "^6.3.0",
-    "ngrok": "^3.3.0",
     "ts-node": "^9.0.0",
     "tsc-watch": "^4.2.9",
     "tsconfig-paths": "^3.9.0",
