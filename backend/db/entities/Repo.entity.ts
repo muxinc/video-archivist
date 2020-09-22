@@ -1,5 +1,6 @@
 import Joi from 'joi';
-import {Column, CreateDateColumn, Entity, Index, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
+import {Column, CreateDateColumn, Entity, Index, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
+import { ArchiveOffer } from './ArchiveOffer.entity';
 
 import { Video } from './Video.entity';
 
@@ -9,19 +10,19 @@ export class Repo {
   @PrimaryGeneratedColumn('uuid')
   readonly id!: string;
 
-  @Column()
+  @Column({ nullable: false })
   organizationName!: string;
 
-  @Column()
+  @Column({ nullable: false })
   repositoryName!: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ nullable: false })
   readonly createdAt!: Date;
 
   @UpdateDateColumn({ nullable: true })
   updatedAt!: Date | null;
 
-  @Column()
+  @Column({ nullable: false })
   webhookSecret!: string;
 
   @ManyToMany(type => Video)
@@ -37,6 +38,9 @@ export class Repo {
     },
   })
   videos!: Array<Video> | null;
+
+  @OneToMany(type => ArchiveOffer, ao => ao.repo)
+  archiveOffers!: Array<ArchiveOffer> | null;
 
   static RepoDTO = Joi.object({
     organizationName: Joi.string(),

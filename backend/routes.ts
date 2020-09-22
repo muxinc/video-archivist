@@ -7,9 +7,8 @@ import { responseWith } from './helpers';
 import { AppOptions } from './server';
 import {
   GITHUB_WEBHOOK_SIGNATURE_HEADER,
-  verifyWebhookPayloadAgainstRepos,
-} from './github-utils';
-import { GithubWebhookPayloads } from './types';
+} from './GithubService';
+import { GithubWebhookPayload } from './types';
 
 export async function attachRoutes(server: Hapi.Server, opts: AppOptions) {
   server.route({
@@ -90,13 +89,10 @@ export async function attachRoutes(server: Hapi.Server, opts: AppOptions) {
       const bufferAsString = buffer.toString('utf-8');
 
       // this is a minor crime but it's fine
-      const githubPayload: GithubWebhookPayloads = JSON.parse(bufferAsString);
+      const githubPayload: GithubWebhookPayload = JSON.parse(bufferAsString);
+      const githubService = req.getGithubService();
 
-      console.log(req.headers);
-
-      const isVerified = await verifyWebhookPayloadAgainstRepos(
-        req.logger,
-        req.getDataService(),
+      const isVerified = await githubService.verifyWebhookPayloadAgainstRepos(
         githubPayload,
         buffer,
         req.headers[GITHUB_WEBHOOK_SIGNATURE_HEADER],
@@ -105,8 +101,7 @@ export async function attachRoutes(server: Hapi.Server, opts: AppOptions) {
         return h.response({ error: 401, message: 'Webhook unvalidated.' }).code(401);
       }
 
-      console.info("WE GOT ONE")
-      console.info(githubPayload);
+      await githubService.processGithubWebhook(githubPayload);
 
       return '';
     }
