@@ -8,6 +8,8 @@ export type Offer =
   | LinkOffer
   ;
 
+export type OfferBehavior = 'save' | 'link';
+
 export type GithubWebhookPayload =
   | EventPayloads.WebhookPayloadIssueComment
   | EventPayloads.WebhookPayloadIssues;

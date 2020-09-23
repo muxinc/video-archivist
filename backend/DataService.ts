@@ -53,12 +53,24 @@ export class DataService {
     return this.videos.findOne({ id: videoId });
   }
 
+  async getVideoByOriginalURL(originalUrl: string): Promise<Video | undefined> {
+    return this.videos.findOne({ originalUrl });
+  }
+
   getArchiveOffer(id: number): Promise<ArchiveOffer | undefined> {
     return this.archiveOffers.findOne({ id }, { relations: ['repo'] });
   }
 
+  async createArchiveOffer(fields: Partial<ArchiveOffer>): Promise<ArchiveOffer> {
+    return this.archiveOffers.save(fields);
+  }
+
   getLinkOffer(id: number): Promise<LinkOffer | undefined> {
     return this.linkOffers.findOne({ id }, { relations: ['repo', 'video']} );
+  }
+
+  createLinkOffer(fields: Partial<LinkOffer>): Promise<LinkOffer> {
+    return this.linkOffers.save(fields);
   }
 
     

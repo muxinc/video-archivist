@@ -1,7 +1,7 @@
 import { DataService } from '../DataService';
 import { ArchiveOffer, ARCHIVE_OFFER_ID_ALPHABET } from '../db/entities/ArchiveOffer.entity';
 import { Repo } from '../db/entities/Repo.entity';
-import { GithubWebhookPayload, Offer } from '../types';
+import { GithubWebhookPayload, Offer, OfferBehavior } from '../types';
 import { Directive, findBodyContent } from './helpers';
 
 export type DirectiveToOfferFactory = (data: DataService, d: Directive) => Promise<Offer | undefined>;

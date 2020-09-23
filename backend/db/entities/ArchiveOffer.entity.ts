@@ -12,8 +12,6 @@ const ARCHIVE_OFFER_HASHIDS = new Hashids('archive offer', 6, ARCHIVE_OFFER_ID_A
  */
 @Entity()
 export class ArchiveOffer {
-  readonly type: OfferBehavior = 'save';
-
   @PrimaryGeneratedColumn()
   readonly id!: number;
 
@@ -35,9 +33,5 @@ export class ArchiveOffer {
 
   static hashToId(hash: string) {
     return ARCHIVE_OFFER_HASHIDS.decode(hash)[0] || 0;
-  }
-
-  static isArchiveOffer(offer: Offer): offer is ArchiveOffer {
-    return offer.type === 'save';
   }
 }

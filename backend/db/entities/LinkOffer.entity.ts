@@ -13,8 +13,6 @@ const LINK_OFFER_HASHIDS = new Hashids('link offer', 6, ARCHIVE_OFFER_ID_ALPHABE
  */
 @Entity()
 export class LinkOffer {
-  readonly type: OfferBehavior = 'link';
-
   @PrimaryGeneratedColumn()
   readonly id!: number;
 
@@ -27,6 +25,9 @@ export class LinkOffer {
   @Column({ nullable: false })
   readonly issueNumber!: number;
 
+  @Column({ nullable: false })
+  readonly url!: string;
+
   @Column({ nullable: false, default: false })
   processed!: boolean;
 
@@ -36,9 +37,5 @@ export class LinkOffer {
 
   static hashToId(hash: string) {
     return LINK_OFFER_HASHIDS.decode(hash)[0] || 0;
-  }
-
-  static isLinkOffer(offer: Offer): offer is LinkOffer {
-    return offer.type === 'link';
   }
 }

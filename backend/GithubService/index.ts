@@ -8,7 +8,7 @@ import { Repo } from '../db/entities/Repo.entity';
 import { GithubWebhookPayload } from '../types';
 import { filterDirectives, findDirectives, makeDirectiveRegexp } from './directives';
 import { isActionableWebhook, isByIgnoredUser } from './helpers';
-import { parseBodyForURLs } from './offers';
+import { determineBehaviorForURLs, makeOffers, parseBodyForURLs, sendOfferComment } from './offers';
 
 export const GITHUB_WEBHOOK_SIGNATURE_HEADER = 'x-hub-signature';
 
@@ -46,7 +46,7 @@ export class GithubService {
     private readonly botUsername: string,
     ignoredUsers: ReadonlyArray<string>,
   ) {
-    this.ignoredUsers = new Set(ignoredUsers.map(u => u.toLowerCase()));
+    this.ignoredUsers = new Set([botUsername, ...ignoredUsers].map(u => u.toLowerCase()));
     this.directiveRegexp = makeDirectiveRegexp(botUsername);
   }
 
@@ -106,7 +106,6 @@ export class GithubService {
 
     logger.debug("Beginning to handle webhook.");
 
-
     // we could get ourselves into trouble if we don't filter ourselves out of
     // the webhooks that we handle, and this can also be useful for anti-abuse
     // in the future if need be.
@@ -163,10 +162,18 @@ export class GithubService {
     // TODO:  determine proper behavior with those URLs
     //        - if we've already archived that video by its original URL, generate a LinkOffer
     //        - if we've not already archived that video, generate an ArchiveOffer
+    const behaviors = await determineBehaviorForURLs(logger, this.dataService, urls);
+    const offers = await makeOffers(logger, this.dataService, behaviors, repo, payload.issue.number);
+    logger.info({ offerCount: offers.length }, `${offers.length} offers created.`);
     // TODO:  post a comment to the issue thread
     //        - if video already exists, post the link to the archived version. Offer to
     //          make it permanently attached to this repo's list with `@botname link <VIDEO_UUID>
     //        - if it doesn't, offer to archive with `@botname save <OFFER_HASHID>`
+
+    const issueNumber = payload.issue.number;
+    logger.debug({ issueNumber }, "sending comment with offers.");
+    await sendOfferComment(this.botUsername, offers, repo, issueNumber, this.octokit);
+    logger.info({ issueNumber }, "github comment sent");
   }
 
 

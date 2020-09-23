@@ -10,6 +10,7 @@ import { ConnectionOptions } from 'typeorm';
 import { attachRoutes } from './routes';
 import { DataService } from './DataService';
 import { GithubService } from './GithubService';
+import { debug } from 'console';
 
 export type AppOptions = {
   hapi: Hapi.ServerOptions,
@@ -35,6 +36,7 @@ async function attachPreMiddlewares(server: Hapi.Server, opts: AppOptions) {
   await server.register({
     plugin: HapiPino,
     options: {
+      level: 'debug',
       prettyPrint: opts.prettyPrintLogs,
       mergeHapiLogData: true,
       logRequestStart: true,
