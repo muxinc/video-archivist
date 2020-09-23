@@ -11,6 +11,8 @@ const ARCHIVE_OFFER_HASHIDS = new Hashids('archive offer', 6, ARCHIVE_OFFER_ID_A
  */
 @Entity()
 export class ArchiveOffer {
+  readonly type = 'save';
+
   @PrimaryGeneratedColumn()
   readonly id!: number;
 

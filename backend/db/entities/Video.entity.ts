@@ -1,5 +1,6 @@
 import Joi from 'joi';
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { LinkOffer } from './LinkOffer.entity';
 import { Repo } from './Repo.entity';
 
 @Entity()
@@ -35,6 +36,9 @@ export class Video {
     },
   })
   repos!: Array<Repo> | null;
+
+  @OneToMany(type => LinkOffer, lo => lo.video)
+  linkOffers!: Array<LinkOffer> | null;
 
   static VideoDTO = Joi.object({
     id: Joi.string(),

@@ -5,6 +5,7 @@ import { Logger } from 'pino';
 
 import { Connection, Repository } from 'typeorm';
 import { ArchiveOffer } from './db/entities/ArchiveOffer.entity';
+import { LinkOffer } from './db/entities/LinkOffer.entity';
 import { Repo } from './db/entities/Repo.entity';
 import { Video } from './db/entities/Video.entity';
 
@@ -24,6 +25,7 @@ export class DataService {
   private readonly repos: Repository<Repo>;
   private readonly videos: Repository<Video>;
   private readonly archiveOffers: Repository<ArchiveOffer>;
+  private readonly linkOffers: Repository<LinkOffer>;
 
   constructor(
     private readonly logger: Logger,
@@ -32,6 +34,7 @@ export class DataService {
     this.repos = db.getRepository(Repo);
     this.videos = db.getRepository(Video);
     this.archiveOffers = db.getRepository(ArchiveOffer);
+    this.linkOffers = db.getRepository(LinkOffer);
   }
 
   getAllRepos(): Promise<ReadonlyArray<Repo>> {
@@ -51,7 +54,11 @@ export class DataService {
   }
 
   getArchiveOffer(id: number): Promise<ArchiveOffer | undefined> {
-    return this.archiveOffers.findOne({ id });
+    return this.archiveOffers.findOne({ id }, { relations: ['repo'] });
+  }
+
+  getLinkOffer(id: number): Promise<LinkOffer | undefined> {
+    return this.linkOffers.findOne({ id }, { relations: ['repo', 'video']} );
   }
 
     

@@ -15,7 +15,8 @@ tmux \
   start-server \; \
   set -g mouse on \; \
   new-session "echo 'Waiting for docker to come up...'; sleep 5; cd backend; \"$SHELL\"" \; \
-  send-keys "source ./.env && yarn start:dev" Enter \; \
+  send-keys "  source ./.env" Enter \; \
+  send-keys "yarn start:dev" Enter \; \
   split-window -h "yarn run -s dev:http-tunnel; \"$SHELL\"" \; \
   split-window -v "yarn run -s dev:svc-${SVC_CMD}; \"$SHELL\"" \; \
   resize-pane -t 1 -y 20 \; \
