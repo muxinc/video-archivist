@@ -1,5 +1,6 @@
 import Hashids from 'hashids/cjs';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Offer } from '../../types';
 import { Repo } from './Repo.entity';
 
 export const ARCHIVE_OFFER_ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
@@ -34,5 +35,9 @@ export class ArchiveOffer {
 
   static hashToId(hash: string) {
     return ARCHIVE_OFFER_HASHIDS.decode(hash)[0] || 0;
+  }
+
+  static isArchiveOffer(offer: Offer): offer is ArchiveOffer {
+    return offer.type === 'save';
   }
 }

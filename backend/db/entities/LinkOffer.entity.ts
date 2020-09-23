@@ -1,5 +1,6 @@
 import Hashids from 'hashids/cjs';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Offer } from '../../types';
 import { ARCHIVE_OFFER_ID_ALPHABET } from './ArchiveOffer.entity';
 import { Repo } from './Repo.entity';
 import { Video } from './Video.entity';
@@ -35,5 +36,9 @@ export class LinkOffer {
 
   static hashToId(hash: string) {
     return LINK_OFFER_HASHIDS.decode(hash)[0] || 0;
+  }
+
+  static isLinkOffer(offer: Offer): offer is LinkOffer {
+    return offer.type === 'link';
   }
 }
