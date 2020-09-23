@@ -8,7 +8,7 @@ export class Video {
   @PrimaryGeneratedColumn('uuid')
   readonly id!: string;
 
-  @Column()
+  @Column({ unique: true })
   originalUrl!: string;
 
   @Column()
