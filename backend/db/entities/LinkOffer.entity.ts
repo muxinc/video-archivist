@@ -1,6 +1,6 @@
 import Hashids from 'hashids/cjs';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Offer } from '../../types';
+import { Offer, OfferBehavior } from '../../types';
 import { ARCHIVE_OFFER_ID_ALPHABET } from './ArchiveOffer.entity';
 import { Repo } from './Repo.entity';
 import { Video } from './Video.entity';
@@ -13,7 +13,7 @@ const LINK_OFFER_HASHIDS = new Hashids('link offer', 6, ARCHIVE_OFFER_ID_ALPHABE
  */
 @Entity()
 export class LinkOffer {
-  readonly type = 'link';
+  readonly type: OfferBehavior = 'link';
 
   @PrimaryGeneratedColumn()
   readonly id!: number;

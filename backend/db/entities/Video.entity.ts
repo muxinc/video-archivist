@@ -9,13 +9,13 @@ export class Video {
   readonly id!: string;
 
   @Column()
-  originalFilename!: string;
+  originalUrl!: string;
 
   @Column()
   acquiredFrom!: string;
 
   @Column()
-  url!: string;
+  archiveUrl!: string;
 
   @CreateDateColumn()
   readonly createdAt!: Date;

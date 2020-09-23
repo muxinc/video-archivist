@@ -1,6 +1,6 @@
 import Hashids from 'hashids/cjs';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Offer } from '../../types';
+import { Offer, OfferBehavior } from '../../types';
 import { Repo } from './Repo.entity';
 
 export const ARCHIVE_OFFER_ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
@@ -12,7 +12,7 @@ const ARCHIVE_OFFER_HASHIDS = new Hashids('archive offer', 6, ARCHIVE_OFFER_ID_A
  */
 @Entity()
 export class ArchiveOffer {
-  readonly type = 'save';
+  readonly type: OfferBehavior = 'save';
 
   @PrimaryGeneratedColumn()
   readonly id!: number;
