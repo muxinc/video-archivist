@@ -1,4 +1,5 @@
 import * as Path from 'path';
+import * as GetEnv from 'getenv';
 
 import { ConnectionOptions } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
@@ -6,11 +7,11 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 const dbOptions: ConnectionOptions = {
   type: 'postgres',
   
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: GetEnv.string('DB_HOST'),
+  port: GetEnv.int('DB_PORT'),
+  username: GetEnv.string('DB_USERNAME'),
+  password: GetEnv.string('DB_PASSWORD'),
+  database: GetEnv.string('DB_NAME', GetEnv.string('DB_USERNAME')),
 
   migrations: [
     Path.resolve(__dirname, 'db', 'migrations', '*.{ts,js}'),
@@ -26,7 +27,7 @@ const dbOptions: ConnectionOptions = {
 
   logging: true,
   synchronize: false,
-  migrationsRun: process.env.NO_MIGRATIONS !== '1',
+  migrationsRun: !GetEnv.boolish('NO_MIGRATIONS', false),
 
   namingStrategy: new SnakeNamingStrategy(),
 };

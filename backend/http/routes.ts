@@ -1,14 +1,14 @@
 import * as Hapi from '@hapi/hapi';
 import Joi from 'joi';
 
-import { Repo } from './db/entities/Repo.entity';
-import { Video } from './db/entities/Video.entity';
-import { responseWith } from './helpers';
+import { Repo } from '../db/entities/Repo.entity';
+import { Video } from '../db/entities/Video.entity';
+import { responseWith } from '../helpers';
 import { AppOptions } from './server';
 import {
   GITHUB_WEBHOOK_SIGNATURE_HEADER,
-} from './GithubService';
-import { GithubWebhookPayload } from './types';
+} from '../GithubService';
+import { GithubWebhookPayload } from '../types';
 
 export async function attachRoutes(server: Hapi.Server, opts: AppOptions) {
   server.route({

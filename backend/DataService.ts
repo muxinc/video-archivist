@@ -53,6 +53,10 @@ export class DataService {
     return this.videos.findOne({ id: videoId });
   }
 
+  async createVideo(fields: Partial<Video>): Promise<Video> {
+    return this.videos.save(fields);
+  }
+
   async getVideoByOriginalURL(originalUrl: string): Promise<Video | undefined> {
     return this.videos.findOne({ originalUrl });
   }
@@ -63,6 +67,14 @@ export class DataService {
 
   async createArchiveOffer(fields: Partial<ArchiveOffer>): Promise<ArchiveOffer> {
     return this.archiveOffers.save(fields);
+  }
+
+  async markArchiveOfferAsProcessed(id: number): Promise<ArchiveOffer> {
+    const offer = await this.getArchiveOffer(id);
+    if (!offer) { throw new Error(`No archive offer #${id}.`); }
+    offer.processed = true;
+
+    return this.archiveOffers.save(offer);
   }
 
   getLinkOffer(id: number): Promise<LinkOffer | undefined> {

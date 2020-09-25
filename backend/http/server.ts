@@ -8,8 +8,8 @@ import * as HapiTypeorm from 'hapi-typeorm';
 import { ConnectionOptions } from 'typeorm';
 
 import { attachRoutes } from './routes';
-import { DataService } from './DataService';
-import { GithubService } from './GithubService';
+import { DataService } from '../DataService';
+import { GithubService } from '../GithubService';
 import { debug } from 'console';
 
 export type AppOptions = {
@@ -17,6 +17,7 @@ export type AppOptions = {
   
   dbOptions: ConnectionOptions,
   prettyPrintLogs: boolean | undefined,
+  githubAccessToken: string,
 }
 
 export async function buildServer(opts: AppOptions): Promise<Hapi.Server> {
@@ -68,7 +69,7 @@ async function attachAppServices(server: Hapi.Server, opts: AppOptions) {
   await server.register([{
     plugin: GithubService.hapiPlugin,
     options: {
-      accessToken: process.env.GITHUB_ACCESS_TOKEN,
+      accessToken: opts.githubAccessToken,
     },
   }]);
 }
