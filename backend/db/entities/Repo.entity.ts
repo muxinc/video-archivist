@@ -1,7 +1,6 @@
 import Joi from 'joi';
 import {Column, CreateDateColumn, Entity, Index, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
 import { ArchiveOffer } from './ArchiveOffer.entity';
-import { LinkOffer } from './LinkOffer.entity';
 
 import { Video } from './Video.entity';
 
@@ -26,7 +25,7 @@ export class Repo {
   @Column({ nullable: false })
   webhookSecret!: string;
 
-  @ManyToMany(type => Video)
+  @ManyToMany(type => Video, v => v.repos, { cascade: true })
   @JoinTable({
     name: 'repo_videos',
     joinColumn: {
@@ -42,9 +41,6 @@ export class Repo {
 
   @OneToMany(type => ArchiveOffer, ao => ao.repo)
   archiveOffers!: Array<ArchiveOffer> | null;
-
-  @OneToMany(type => LinkOffer, lo => lo.repo)
-  linkOffers!: Array<LinkOffer> | null;
 
   static RepoDTO = Joi.object({
     organizationName: Joi.string(),

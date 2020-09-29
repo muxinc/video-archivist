@@ -12,6 +12,7 @@ import { DataService } from '../../DataService';
 import { ArchiveOffer } from '../../db/entities/ArchiveOffer.entity';
 import { Video } from '../../db/entities/Video.entity';
 import { DownloadVideoJobData } from './types';
+import { Repo } from '../../db/entities/Repo.entity';
 
 export const DOWNLOAD_VIDEO_JOB_NAME = 'download-video-job';
 
@@ -50,20 +51,17 @@ export function makeDownloadVideoJobProcessor(
       try {
         logger.info({ url: offer.url }, "Fetching video for upload.");
         
-        const archiveUrl = offer.url.endsWith('m3u8')
-          ? await saveM3U8(logger, offer, videoStorageBucket)
-          : await saveFile(logger, offer, videoStorageBucket);
-        
-        const video = await dataService.createVideo({
-          acquiredFrom: `https://github.com/${offer.repo!.organizationName}/${offer.repo!.repositoryName}/issues/${offer.issueNumber}`,
-          originalUrl: offer.url,
-          archiveUrl,
-          repos: [offer.repo!],
-        });
-        logger.info({ videoId: video.id }, "Video saved.");
+        let video = await dataService.getVideoByOriginalURL(offer.url);
+
+        if (video) {
+          // we already have the video, so link it
+          await linkVideo(logger, dataService, offer.repo!, video);
+        } else {
+          video = await downloadNewVideo(logger, videoStorageBucket, dataService, offer);
+        }
 
         await dataService.markArchiveOfferAsProcessed(offer.id);
-        logger.info("Offer marked as processed. Done.");
+        logger.info({ videoId: video.id }, "Offer marked as processed. Done.");
 
         await sendSuccessMessage(offer, video, octokit);
         logger.info("Archive job complete.");
@@ -80,7 +78,44 @@ export function makeDownloadVideoJobProcessor(
   });
 }
 
+async function linkVideo(
+  logger: Logger,
+  dataService: DataService,
+  repo: Repo,
+  video: Video,
+) {
+  logger = logger.child({ phase: 'linkVideo' });
+  logger.info({ repoId: repo.id, videoId: video.id }, "Video is already archived, so adding it to the repo.");
+
+  await dataService.linkVideoWithRepo(repo, video);
+}
+
+async function downloadNewVideo(
+  logger: Logger,
+  videoStorageBucket: Bucket,
+  dataService: DataService,
+  offer: ArchiveOffer,
+): Promise<Video> {
+  logger = logger.child({ phase: 'downloadNewVideo' });
+  logger.info({ url: offer.url }, "Fetching video for upload.");
+        
+  const archiveUrl = offer.url.endsWith('m3u8')
+    ? await saveM3U8(logger, offer, videoStorageBucket)
+    : await saveFile(logger, offer, videoStorageBucket);
+  
+  const video = await dataService.createVideo({
+    acquiredFrom: `https://github.com/${offer.repo!.organizationName}/${offer.repo!.repositoryName}/issues/${offer.issueNumber}`,
+    originalUrl: offer.url,
+    archiveUrl,
+    repos: [offer.repo!],
+  });
+  logger.info({ videoId: video.id }, "Video saved.");
+
+  return video;
+}
+
 async function saveFile(logger: Logger, offer: ArchiveOffer, bucket: Bucket): Promise<string> {
+  logger = logger.child({ phase: 'saveFile' });
   const url = offer.url;
   // if we got something with a weird query string parameter, dump it
   const fileExt = Path.extname(url).split("?")[0];
@@ -122,6 +157,7 @@ async function saveFile(logger: Logger, offer: ArchiveOffer, bucket: Bucket): Pr
 }
 
 async function saveM3U8(logger: Logger, offer: ArchiveOffer, bucket: Bucket): Promise<string> {
+  logger = logger.child({ phase: 'saveM3U8' });
   throw new Error("M3U8 not implemented yet");
 }
 

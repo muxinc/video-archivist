@@ -1,11 +1,9 @@
 import { EventPayloads } from '@octokit/webhooks';
 
 import { ArchiveOffer } from './db/entities/ArchiveOffer.entity';
-import { LinkOffer } from './db/entities/LinkOffer.entity';
 
 export type Offer =
   | ArchiveOffer
-  | LinkOffer
   ;
 
 export type OfferBehavior = 'save' | 'link';

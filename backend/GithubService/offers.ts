@@ -1,12 +1,8 @@
 import { Octokit } from '@octokit/rest';
-import { url } from 'inspector';
 import { Logger } from 'pino';
-import { off } from 'process';
-import { AdvancedConsoleLogger } from 'typeorm';
 
 import { DataService } from '../DataService';
 import { ArchiveOffer } from '../db/entities/ArchiveOffer.entity';
-import { LinkOffer } from '../db/entities/LinkOffer.entity';
 import { Repo } from '../db/entities/Repo.entity';
 import { GithubWebhookPayload, Offer, OfferBehavior } from '../types';
 import { sendGithubComment } from './commenting';
@@ -59,15 +55,18 @@ export async function determineBehaviorForURLs(
   // TODO:  this may emit null so we can filter things (ex. don't offer to link things in our own buckets)
   // TODO:  also check for 404 here so we don't try to archive something bogus? or do that on save?
 
+  // this is set up in the way it is (with multiple commands etc.) because
+  // there used to be a separate `link` command rather than just `save`. I
+  // could've refactored it all out, but I left it as it's not harmful code
+  // and may end up useful later.
   return Object.fromEntries(
     await Promise.all(
-      [...urls].map(async url => [url, (await dataService.getVideoByOriginalURL(url)) ? 'link' : 'save']),
+      [...urls].map(async url => [url, 'save']),
     ),
   );
 }
 
-export type OfferWithTag =
-{ link: LinkOffer } | { save: ArchiveOffer };
+export type OfferWithTag = { save: ArchiveOffer };
 
 export async function makeOffers(
   logger: Logger,
@@ -85,15 +84,6 @@ export async function makeOffers(
             repo,
             url,
           }) };
-        case 'link':
-          return {
-            link: await dataService.createLinkOffer({
-              issueNumber,
-              repo,
-              url,
-              video: await dataService.getVideoByOriginalURL(url),
-            }),
-          };
         default:
           throw new Error("can't happen!");
       }
@@ -107,9 +97,7 @@ function templateOfferCommentBody(
 ): string {
   const offerBullets =
     offerWithTags.map(oft => {
-      if ('link' in oft) {
-        return `- ${oft.link.url}: **@${botUsername} link ${LinkOffer.idToHash(oft.link.id)}**`;
-      } else if ('save' in oft) {
+      if ('save' in oft) {
         return `- ${oft.save.url}: **@${botUsername} save ${ArchiveOffer.idToHash(oft.save.id)}**`;
       } else {
         throw new Error("unrecognized offer in templating: " + JSON.stringify(oft));

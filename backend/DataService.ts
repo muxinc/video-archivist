@@ -5,7 +5,6 @@ import { Logger } from 'pino';
 
 import { Connection, Repository } from 'typeorm';
 import { ArchiveOffer } from './db/entities/ArchiveOffer.entity';
-import { LinkOffer } from './db/entities/LinkOffer.entity';
 import { Repo } from './db/entities/Repo.entity';
 import { Video } from './db/entities/Video.entity';
 
@@ -25,7 +24,6 @@ export class DataService {
   private readonly repos: Repository<Repo>;
   private readonly videos: Repository<Video>;
   private readonly archiveOffers: Repository<ArchiveOffer>;
-  private readonly linkOffers: Repository<LinkOffer>;
 
   constructor(
     private readonly logger: Logger,
@@ -34,7 +32,6 @@ export class DataService {
     this.repos = db.getRepository(Repo);
     this.videos = db.getRepository(Video);
     this.archiveOffers = db.getRepository(ArchiveOffer);
-    this.linkOffers = db.getRepository(LinkOffer);
   }
 
   getAllRepos(): Promise<ReadonlyArray<Repo>> {
@@ -42,7 +39,7 @@ export class DataService {
   }
 
   async getRepo(organizationName: string, repositoryName: string): Promise<Repo | undefined> {
-    return this.repos.findOne({ organizationName, repositoryName });
+    return this.repos.findOne({ organizationName, repositoryName }, { relations: ['videos'] });
   }
 
   getAllVideos(): Promise<ReadonlyArray<Video>> {
@@ -55,6 +52,15 @@ export class DataService {
 
   async createVideo(fields: Partial<Video>): Promise<Video> {
     return this.videos.save(fields);
+  }
+
+  async linkVideoWithRepo(repo: Repo, video: Video): Promise<Repo> {
+    const repoWithRelation = repo.videos ? repo : (await this.getRepo(repo.organizationName, repo.repositoryName))!;
+    
+    repoWithRelation.videos!.push(video);
+    this.repos.save(repoWithRelation);
+
+    return repoWithRelation;
   }
 
   async getVideoByOriginalURL(originalUrl: string): Promise<Video | undefined> {
@@ -76,15 +82,6 @@ export class DataService {
 
     return this.archiveOffers.save(offer);
   }
-
-  getLinkOffer(id: number): Promise<LinkOffer | undefined> {
-    return this.linkOffers.findOne({ id }, { relations: ['repo', 'video']} );
-  }
-
-  createLinkOffer(fields: Partial<LinkOffer>): Promise<LinkOffer> {
-    return this.linkOffers.save(fields);
-  }
-
     
   // TODO: figure out why this plugin can't correctly depend on `hapi-pino`
   //       so that we can use `req` decorators the whole way through. As-is,

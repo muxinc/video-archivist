@@ -9,7 +9,6 @@ export type DirectiveToOfferFactory = (data: DataService, d: Directive) => Promi
 
 export const VALID_DIRECTIVE_COMMANDS: Record<string, DirectiveToOfferFactory> = {
   'save': async (data, d) => data.getArchiveOffer(d.id),
-  'link': async (data, d) => data.getLinkOffer(d.id),
 };
 
 export function makeDirectiveRegexp(botUsername: string): RegExp {
