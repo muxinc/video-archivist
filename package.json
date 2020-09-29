@@ -5,11 +5,13 @@
         "dev:svc-down": "docker-compose down",
         "dev:svc-reset": "yarn run -s dev:svc-down && yarn run -s dev:svc-up",
         "dev:connect-db": "PGPASSWORD=devdb psql -h localhost -p 25432 -U devdb",
-        "dev:http-tunnel": "yarn && yarn exec -s ngrok http 13000",
-        "dev:http-tunnel:hostname": "node ./scripts/get-ngrok-hostname 13000"
+        "dev:connect-redis": "redis-cli -h localhost -p 26379",
+        "dev:http-tunnel": "yarn && yarn exec -s -- smee -u $(yarn run -s dev:http-tunnel:hostname) -p 13000 -P /webhooks/github",
+        "dev:http-tunnel:hostname": "echo \"https://smee.io/MlUeUuW1GCUEgm3-$(echo \"$(whoami)\" \"$(hostname)\" | md5sum | cut -f1 -d' ')\""
     },
     "devDependencies": {
         "json": "^10.0.0",
-        "ngrok": "^3.3.0"
+        "ngrok": "^3.3.0",
+        "smee-client": "^1.2.2"
     }
 }

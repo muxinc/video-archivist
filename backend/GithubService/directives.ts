@@ -1,3 +1,4 @@
+import { Logger } from 'pino';
 import { DataService } from '../DataService';
 import { ArchiveOffer, ARCHIVE_OFFER_ID_ALPHABET } from '../db/entities/ArchiveOffer.entity';
 import { Repo } from '../db/entities/Repo.entity';
@@ -39,6 +40,7 @@ export function findDirectives(
  * We only want directives that match ArchiveOffers that have been made for _this_ issue.
  */
 export async function filterDirectives(
+  logger: Logger,
   dataService: DataService,
   directives: ReadonlyArray<Directive>,
   issueNumber: number,
@@ -56,13 +58,26 @@ export async function filterDirectives(
   }));
 
   for (const [directive, offer] of entries) {
-    if (!offer) { continue; }
-    if (offer.processed) { continue; }
+    logger = logger.child({ directive });
+    if (!offer) {
+      logger.debug("No offer for directive.");
+      continue;
+    }
+    if (offer.processed) {
+      logger.debug("Offer already processed.");
+      continue;
+    }
 
     // the first clause should never happen because we join on it, but to be explicit
-    if (!(offer.repo) || offer.repo.id !== repo.id) { continue; }
+    if (!(offer.repo) || offer.repo.id !== repo.id) {
+      logger.warn(`No repo in offer join OR offer repo id ${offer.repo?.id ?? 'NONE FOUND'} != passed repo ${repo.id}`);
+      continue;
+    }
 
-    if (offer.issueNumber !== issueNumber) { continue; }
+    if (offer.issueNumber !== issueNumber) {
+      logger.debug(`Offer issue number ${offer.issueNumber} does not match directive number ${issueNumber}`);
+      continue;
+    }
 
     ret.push(directive);
   }

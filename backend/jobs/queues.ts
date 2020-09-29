@@ -40,7 +40,7 @@ export class Queues {
   }
 
   async stopProcessors() {
-    this.queues.forEach(q => q.pause());
+    this.queues.forEach(q => q.close());
     return Promise.all(this.queues.map(q => q.whenCurrentJobsFinished()));
   }
 

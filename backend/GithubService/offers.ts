@@ -29,8 +29,8 @@ const VIDEO_FORMAT_EXTENSIONS = [
 
 const OFFER_COMMENT_HEADER =
   `Hey! We've detected some video files in a comment on this issue. If you'd like to permanently ` +
-  `archive these videos, a maintainer of the project can reply to this issue with the following ` +
-  `commands:`;
+  `archive these videos and tie them to this project, a maintainer of the project can reply ` +
+  `to this issue with the following commands:`;
 
 export const SEARCH_PATTERN =
   new RegExp(`(?<url>https?:\/\/.*\.(?<ext>${VIDEO_FORMAT_EXTENSIONS.join('|')}))`, 'gi');
@@ -86,11 +86,14 @@ export async function makeOffers(
             url,
           }) };
         case 'link':
-          return { link: await dataService.createLinkOffer({
-            issueNumber,
-            repo,
-            video: await dataService.getVideoByOriginalURL(url),
-          }) };
+          return {
+            link: await dataService.createLinkOffer({
+              issueNumber,
+              repo,
+              url,
+              video: await dataService.getVideoByOriginalURL(url),
+            }),
+          };
         default:
           throw new Error("can't happen!");
       }

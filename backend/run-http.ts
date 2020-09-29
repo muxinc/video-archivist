@@ -14,6 +14,10 @@ const ormconfig: ConnectionOptions = require('./ormconfig');
     prettyPrintLogs: true,
     dbOptions: ormconfig,
     githubAccessToken: GetEnv.string('GITHUB_ACCESS_TOKEN'),
+    redisOptions: {
+      host: GetEnv.string('REDIS_HOST'),
+      port: GetEnv.int('REDIS_PORT', 6379),
+    },
   });
   
   await server.start();

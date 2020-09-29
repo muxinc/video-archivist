@@ -11,11 +11,13 @@ import { attachRoutes } from './routes';
 import { DataService } from '../DataService';
 import { GithubService } from '../GithubService';
 import { debug } from 'console';
+import IORedis from 'ioredis';
 
 export type AppOptions = {
   hapi: Hapi.ServerOptions,
   
   dbOptions: ConnectionOptions,
+  redisOptions: IORedis.RedisOptions,
   prettyPrintLogs: boolean | undefined,
   githubAccessToken: string,
 }
@@ -70,6 +72,7 @@ async function attachAppServices(server: Hapi.Server, opts: AppOptions) {
     plugin: GithubService.hapiPlugin,
     options: {
       accessToken: opts.githubAccessToken,
+      redisOptions: opts.redisOptions,
     },
   }]);
 }

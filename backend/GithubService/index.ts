@@ -1,10 +1,12 @@
 import Hapi from '@hapi/hapi';
 import { Octokit } from '@octokit/rest';
+import IORedis from 'ioredis';
 import { Logger } from 'pino';
 
 import { checkGithubHmac } from '../crypto-utils';
 import { DataService } from '../DataService';
 import { Repo } from '../db/entities/Repo.entity';
+import { Queues } from '../jobs/queues';
 import { GithubWebhookPayload } from '../types';
 import { filterDirectives, findDirectives, makeDirectiveRegexp } from './directives';
 import { isActionableWebhook, isByIgnoredUser } from './helpers';
@@ -26,6 +28,8 @@ declare module '@hapi/hapi' {
 
 export type GithubServiceConfig = {
   readonly accessToken: string;
+
+  readonly redisOptions: IORedis.RedisOptions;
 }
 
 export class GithubService {
@@ -44,6 +48,7 @@ export class GithubService {
     private readonly dataService: DataService,
     private readonly octokit: Octokit,
     private readonly botUsername: string,
+    private readonly queues: Queues,
     ignoredUsers: ReadonlyArray<string>,
   ) {
     this.ignoredUsers = new Set([botUsername, ...ignoredUsers].map(u => u.toLowerCase()));
@@ -110,7 +115,7 @@ export class GithubService {
     // the webhooks that we handle, and this can also be useful for anti-abuse
     // in the future if need be.
     if (isByIgnoredUser(payload, this.ignoredUsers)) {
-      logger.indebugfo("Ignored user; skipping processing.");
+      logger.debug("Ignored user; skipping processing.");
       return;
     }
 
@@ -134,7 +139,7 @@ export class GithubService {
     logger.debug({ foundDirectiveCount: foundDirectives.length }, `${foundDirectives.length} directives found.`);
     // now that we've found them, let's sanity check them...
 
-    const directives = await filterDirectives(this.dataService, foundDirectives, payload.issue.id, repo);
+    const directives = await filterDirectives(logger, this.dataService, foundDirectives, payload.issue.number, repo);
     logger.debug({ directiveCount: directives.length }, `${directives.length} directives after filtering.`);
 
     if (directives.length < 1) {
@@ -145,12 +150,25 @@ export class GithubService {
     // TODO:  now that we have directives, do something useful with them!
     //        - `@botname save <OFFER_HASHID>` should download an existing video or playlist and make a Video
     //        - `@botname link <LINK_HASHID>` should add a many-to-many link between an existing video and this repo
+
+    for (const directive of directives) {
+      switch (directive.command) {
+        case 'link':
+          throw new Error("TODO: implement linking");
+        case 'save':
+          logger.info({ archiveOfferId: directive.id }, "Enqueueing job for archive offer.");
+          this.queues.enqueueDownloadVideoJob({ archiveOfferId: directive.id });
+          break;
+        default:
+          throw new Error("Impossible directive: " + JSON.stringify(directive));
+      }
+    }
   }
 
   private async handleOffers(logger: Logger, payload: GithubWebhookPayload, repo: Repo): Promise<void> {
     logger = logger.child({ phase: 'handleOffers' });
 
-    // TODO:  parse the payload for URLs
+    // parse the payload for URLs
     const urls = parseBodyForURLs(payload);
     if (urls.size < 1) {
       logger.debug("No URLs found, ending.");
@@ -159,17 +177,12 @@ export class GithubService {
 
     logger.info({ urls }, "URLs detected; processing them now.");
 
-    // TODO:  determine proper behavior with those URLs
-    //        - if we've already archived that video by its original URL, generate a LinkOffer
-    //        - if we've not already archived that video, generate an ArchiveOffer
+    // determine proper behavior with those URLs
     const behaviors = await determineBehaviorForURLs(logger, this.dataService, urls);
     const offers = await makeOffers(logger, this.dataService, behaviors, repo, payload.issue.number);
     logger.info({ offerCount: offers.length }, `${offers.length} offers created.`);
-    // TODO:  post a comment to the issue thread
-    //        - if video already exists, post the link to the archived version. Offer to
-    //          make it permanently attached to this repo's list with `@botname link <VIDEO_UUID>
-    //        - if it doesn't, offer to archive with `@botname save <OFFER_HASHID>`
 
+    // now, post a comment to the issue thread
     const issueNumber = payload.issue.number;
     logger.debug({ issueNumber }, "sending comment with offers.");
     await sendOfferComment(this.botUsername, offers, repo, issueNumber, this.octokit);
@@ -197,6 +210,7 @@ export class GithubService {
           server.plugins['data-service'].getDataService(),
           octokit,
           whoami.login,
+          new Queues(server.logger, options.redisOptions),
           [],
         );
       };

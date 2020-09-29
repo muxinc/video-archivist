@@ -11,6 +11,7 @@ import { Storage } from '@google-cloud/storage';
 const LOGGER = Pino({
   name: 'oopsdotvideo-jobs',
   level: 'info',
+  
 });
 
 (async () => {
@@ -25,7 +26,13 @@ const LOGGER = Pino({
     { host: REDIS_HOST, port: REDIS_PORT },
   );
 
-  const gcpStorage = new Storage();
+  const gcpStorage = new Storage({
+    scopes: [
+      'storage.objects.get',
+      'storage.objects.delete',
+      'storage.objects.create',
+    ],
+  });
   queues.runProcessors(
     typeorm,
     new Octokit({
