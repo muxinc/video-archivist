@@ -97,7 +97,12 @@ async function downloadNewVideo(
 ): Promise<Video> {
   logger = logger.child({ phase: 'downloadNewVideo' });
   logger.info({ url: offer.url }, "Fetching video for upload.");
-        
+
+  const repo = offer.repo;
+  if (!repo) {
+    throw new Error("Got an offer without a Repo; did you forget a join?");
+  }
+
   const archiveUrl = offer.url.endsWith('m3u8')
     ? await saveM3U8(logger, offer, videoStorageBucket)
     : await archiveFile(
@@ -112,9 +117,12 @@ async function downloadNewVideo(
     acquiredFrom: `https://github.com/${offer.repo!.organizationName}/${offer.repo!.repositoryName}/issues/${offer.issueNumber}`,
     originalUrl: offer.url,
     archiveUrl,
-    repos: [offer.repo!],
+    repos: [],
   });
   logger.info({ videoId: video.id }, "Video saved.");
+  
+  await dataService.linkVideoWithRepo(repo, video);
+  logger.info({ videoId: video.id, repoId: repo.id }, "Video linked with repo.");
 
   return video;
 }
@@ -137,7 +145,7 @@ async function sendErrorMessage(err: Error, offer: ArchiveOffer, octokit: Octoki
   const botUsername = (await octokit.users.getAuthenticated()).data.login;
   const body =
     `Unfortunately, trying to archive ${offer.url} failed with the following error:\n\n` +
-    '```' + err.message + '\n```\n\n' +
+    '```\n' + err.message + '\n```\n\n' +
     `If this doesn't look fatal, you can try to save this again with the command ` + 
     `\`@${botUsername} save ${ArchiveOffer.idToHash(offer.id)}\`. Reach out to Mux ` +
     `DevEx if you've got any questions!`;

@@ -35,7 +35,7 @@ export async function saveM3U8(
 
 async function downloadAndParseM3U8(
   logger: Logger,
-  url: string,
+  m3u8Url: string,
   bucket: Bucket,
   bucketBasePath: string,
   index: Counter = new Counter(),
@@ -53,10 +53,10 @@ async function downloadAndParseM3U8(
   //        I can. If we need to improve it further, there's some stuff we can try.
   const bucketFilePath = `${bucketBasePath}/${indexNumber === 0 ? 'playlist' : indexNumber}.m3u8`;
 
-  if (visitedSet.has(url)) {
-    throw new Error(`Visited set also contains '${url}'; circular reference detected.`);
+  if (visitedSet.has(m3u8Url)) {
+    throw new Error(`Visited set also contains '${m3u8Url}'; circular reference detected.`);
   }
-  visitedSet.add(url);
+  visitedSet.add(m3u8Url);
   
   // it's HOPEFULLY unlucky we ever hit this, but this is here in case somebody tries
   // to rabbit our app.
@@ -70,7 +70,7 @@ async function downloadAndParseM3U8(
 
   const { body: m3u8Text, contentType } = await downloadFileAsText(
     logger,
-    url,
+    m3u8Url,
   );
 
   const awaiters: Array<Promise<any>> = [];
@@ -95,7 +95,7 @@ async function downloadAndParseM3U8(
     // we're going to assume validity here and let it explode later if something's wrong.
     const ext = Path.extname(line);
 
-    const mediaUrl = line.trim();
+    const mediaUrl = canonicalizeUrl(m3u8Url, line.trim());
 
     if (ext === '.m3u8') {
       logger.debug({ mediaUrl }, "looks like an m3u8; recursively parsing to upload.");
@@ -111,12 +111,13 @@ async function downloadAndParseM3U8(
 
       m3u8Lines.push(`${newIndexNumber}.m3u8`);
     } else {
-      const gcpArchivePath = `${bucketBasePath}/${uuidv4()}${ext}`;
+      const archiveFileName = `${uuidv4()}${ext}`;
+      const gcpArchivePath = `${bucketBasePath}/${archiveFileName}`;
 
       logger.debug({ mediaUrl, gcpArchivePath }, 'file detected (we think), adding to m3u8.');
 
       awaiters.push(archiveFile(logger, mediaUrl, bucket, gcpArchivePath));
-      m3u8Lines.push(gcpArchivePath);
+      m3u8Lines.push(archiveFileName);
     }
   }
 
@@ -136,3 +137,10 @@ async function downloadAndParseM3U8(
   return [indexNumber, uploadedM3U8];
 }
 
+function canonicalizeUrl(m3u8Url: string, mediaUrl: string): string {
+  if (mediaUrl.startsWith("http://") || mediaUrl.startsWith("https://")) {
+    return mediaUrl;
+  }
+
+  return Path.dirname(m3u8Url) + "/" + mediaUrl;
+}

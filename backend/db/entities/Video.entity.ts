@@ -25,11 +25,11 @@ export class Video {
   @ManyToMany(type => Repo)
   @JoinTable({
     name: 'repo_videos',
-    inverseJoinColumn: {
+    joinColumn: {
       name: 'video',
       referencedColumnName: 'id',
     },
-    joinColumn: {
+    inverseJoinColumn: {
       name: 'repo',
       referencedColumnName: 'id',
     },

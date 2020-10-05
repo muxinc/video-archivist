@@ -20,7 +20,6 @@ export async function archiveFile(
   logger.info({ url, archiveUrl: bucketFile.name }, "Archiving to object storage.");
   try {
     const remoteGet = await Axios.get<Stream>(url, { responseType: 'stream' });
-    console.log(remoteGet.data);
     if (remoteGet.status < 200 || 299 < remoteGet.status) {
       throw new Error(`Error retrieving ${url}: received status code ${remoteGet.status}.`);
     }
@@ -29,14 +28,10 @@ export async function archiveFile(
       metadata: {
         contentType: remoteGet.headers['content-type'] ?? 'video/*',
       },
+      predefinedAcl: "publicRead",
     });
 
     const gcpOutputPipe = remoteGet.data.pipe(bucketStream, { end: true });
-
-    // GCP does not like immediate ACL changes after the resource is uploaded. sigh?
-    await sleep(2000);
-    logger.debug("Making bucket file public.");
-    await bucketFile.makePublic();
 
     const archiveUrl = `https://storage.googleapis.com/${bucket.name}/${bucketFile.name}`;
     logger.info({ archiveUrl }, "File archived to object storage.");
@@ -59,7 +54,7 @@ export async function downloadFileAsText(
   logger = logger.child({ phase: 'archiveFile', url });
   logger.info("Downloading file locally.");
 
-  const remoteGet = await Axios.get<string>(url, { responseType: 'stream' });
+  const remoteGet = await Axios.get<string>(url, { responseType: 'text' });
   if (remoteGet.status < 200 || 299 < remoteGet.status) {
     throw new Error(`Error retrieving ${url}: received status code ${remoteGet.status}.`);
   }
@@ -86,15 +81,11 @@ export async function uploadTextAsFile(
       metadata: {
         contentType: contentType,
       },
+      predefinedAcl: "publicRead",
     });
 
     bucketStream.write(text, 'utf-8');
     bucketStream.end();
-
-    // GCP does not like immediate ACL changes after the resource is uploaded. sigh?
-    await sleep(2000);
-    logger.debug("Making bucket file public.");
-    await bucketFile.makePublic();
 
     return bucketFile;
   } catch (err) {
