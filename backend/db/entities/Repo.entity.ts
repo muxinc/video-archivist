@@ -29,11 +29,11 @@ export class Repo {
   @JoinTable({
     name: 'repo_videos',
     joinColumn: {
-      name: 'video',
+      name: 'repo',
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {
-      name: 'repo',
+      name: 'video',
       referencedColumnName: 'id',
     },
   })

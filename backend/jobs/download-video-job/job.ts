@@ -3,16 +3,15 @@ import * as Path from 'path';
 import Bull from 'bull';
 import { Logger } from 'pino';
 import { Connection } from 'typeorm';
-import Axios from 'axios';
 import { Bucket, File } from '@google-cloud/storage';
-import { Stream } from 'stream';
-import sleep from 'sleep-promise';
 
 import { DataService } from '../../DataService';
 import { ArchiveOffer } from '../../db/entities/ArchiveOffer.entity';
 import { Video } from '../../db/entities/Video.entity';
 import { DownloadVideoJobData } from './types';
 import { Repo } from '../../db/entities/Repo.entity';
+import { saveM3U8 } from './m3u8';
+import { archiveFile } from './downloading';
 
 export const DOWNLOAD_VIDEO_JOB_NAME = 'download-video-job';
 
@@ -98,68 +97,36 @@ async function downloadNewVideo(
 ): Promise<Video> {
   logger = logger.child({ phase: 'downloadNewVideo' });
   logger.info({ url: offer.url }, "Fetching video for upload.");
-        
+
+  const repo = offer.repo;
+  if (!repo) {
+    throw new Error("Got an offer without a Repo; did you forget a join?");
+  }
+
   const archiveUrl = offer.url.endsWith('m3u8')
     ? await saveM3U8(logger, offer, videoStorageBucket)
-    : await saveFile(logger, offer, videoStorageBucket);
+    : await archiveFile(
+      logger,
+      offer.url,
+      videoStorageBucket,
+      // if we got something with a weird query string parameter, dump it
+      `${ArchiveOffer.idToHash(offer.id)}${Path.extname(offer.url).split("?")[0]}`,
+    );
   
   const video = await dataService.createVideo({
     acquiredFrom: `https://github.com/${offer.repo!.organizationName}/${offer.repo!.repositoryName}/issues/${offer.issueNumber}`,
     originalUrl: offer.url,
     archiveUrl,
-    repos: [offer.repo!],
+    repos: [],
   });
   logger.info({ videoId: video.id }, "Video saved.");
+  
+  await dataService.linkVideoWithRepo(repo, video);
+  logger.info({ videoId: video.id, repoId: repo.id }, "Video linked with repo.");
 
   return video;
 }
 
-async function saveFile(logger: Logger, offer: ArchiveOffer, bucket: Bucket): Promise<string> {
-  logger = logger.child({ phase: 'saveFile' });
-  const url = offer.url;
-  // if we got something with a weird query string parameter, dump it
-  const fileExt = Path.extname(url).split("?")[0];
-
-  const bucketFile = bucket.file(`${ArchiveOffer.idToHash(offer.id)}${fileExt}`);
-  logger.info({ url, archiveUrl: bucketFile.name }, "Archiving to object storage.");
-  try {
-    const remoteGet = await Axios.get<Stream>(offer.url, { responseType: 'stream' });
-    console.log(remoteGet.data);
-    if (remoteGet.status < 200 || 299 < remoteGet.status) {
-      throw new Error(`Error retrieving ${url}: received status code ${remoteGet.status}.`);
-    }
-
-    const bucketStream = bucketFile.createWriteStream({
-      metadata: {
-        contentType: remoteGet.headers['content-type'] ?? 'video/*',
-      },
-    });
-
-    const pipe = remoteGet.data.pipe(bucketStream, { end: true });
-
-    // GCP does not like immediate ACL changes after the resource is uploaded. sigh?
-    await sleep(2000);
-    logger.debug("Making video file public.");
-    await bucketFile.makePublic();
-
-    const archiveUrl = `https://storage.googleapis.com/${bucket.name}/${bucketFile.name}`;
-    logger.info({ archiveUrl }, "File archived to object storage.");
-    return archiveUrl;
-  } catch (err) {
-    logger.warn({ err }, "Error caught in saveFile; removing bucket file if it has been created.");
-
-    if (await bucketFile.exists()) {
-      await bucketFile.delete();
-    }
-
-    throw err;
-  }
-}
-
-async function saveM3U8(logger: Logger, offer: ArchiveOffer, bucket: Bucket): Promise<string> {
-  logger = logger.child({ phase: 'saveM3U8' });
-  throw new Error("M3U8 not implemented yet");
-}
 
 async function sendSuccessMessage(offer: ArchiveOffer, video: Video, octokit: Octokit) {
   const body =
@@ -178,7 +145,7 @@ async function sendErrorMessage(err: Error, offer: ArchiveOffer, octokit: Octoki
   const botUsername = (await octokit.users.getAuthenticated()).data.login;
   const body =
     `Unfortunately, trying to archive ${offer.url} failed with the following error:\n\n` +
-    '```' + err.message + '\n```\n\n' +
+    '```\n' + err.message + '\n```\n\n' +
     `If this doesn't look fatal, you can try to save this again with the command ` + 
     `\`@${botUsername} save ${ArchiveOffer.idToHash(offer.id)}\`. Reach out to Mux ` +
     `DevEx if you've got any questions!`;
