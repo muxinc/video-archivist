@@ -54,6 +54,7 @@
     "reflect-metadata": "^0.1.13",
     "runtypes": "^5.0.1",
     "sleep-promise": "^8.0.1",
+    "source-map-support": "^0.5.19",
     "typeorm": "^0.2.26",
     "typeorm-naming-strategies": "^2.0.0",
     "uuid": "^8.3.0"

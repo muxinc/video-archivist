@@ -1,10 +1,9 @@
 import Hashids from 'hashids/cjs';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Offer, OfferBehavior } from '../../types';
 import { Repo } from './Repo.entity';
 
 export const ARCHIVE_OFFER_ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-const ARCHIVE_OFFER_HASHIDS = new Hashids('archive offer', 6, ARCHIVE_OFFER_ID_ALPHABET);
+const ARCHIVE_OFFER_HASHIDS = new Hashids('archive offer hashid', 6, ARCHIVE_OFFER_ID_ALPHABET);
 
 /**
  * When we detect a video link in a monitored repository, we spawn an archive offer
