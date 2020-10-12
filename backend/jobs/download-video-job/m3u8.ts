@@ -6,12 +6,7 @@ import * as Path from 'path';
 import { ArchiveOffer } from '../../db/entities/ArchiveOffer.entity';
 import { archiveFile, downloadFileAsText, uploadTextAsFile } from './downloading';
 import { Counter } from './Counter';
-
-export type MungeM3U8File = { originalUrl: string, targetPath: string };
-export type MungeM3U8Result = {
-  mungedText: string,
-  files: Array<MungeM3U8File>,
-}
+import { canonicalizeUrl, ExtTagKV, extTagsToM3U8Format, parseExtTags } from './parsing';
 
 export async function saveM3U8(
   logger: Logger,
@@ -41,6 +36,8 @@ async function downloadAndParseM3U8(
   index: Counter = new Counter(),
   visitedSet: Set<string> = new Set(),
 ): Promise<[number, File]> {
+  logger = logger.child({ m3u8Url });
+  
   // BE WARNED: THERE ARE DRAGONS HERE
   // Not super scary dragons, but we do have some pass-by-reference shenanigans going on in
   // here. `index` is a stateful by-reference counter so we guarantee that any child M3U8
@@ -48,6 +45,7 @@ async function downloadAndParseM3U8(
   // have `visitedSet` to remove cycles and to discourage rabbit-type attacks.
 
   const indexNumber = index.getAndIncrement();
+  const paddedIndex = indexNumber.toString().padStart(4, '0');
   // TODO:  evaluate performance (if it's a problem)
   //        This is pretty iterative and await-heavy; I've tried to parallelize where
   //        I can. If we need to improve it further, there's some stuff we can try.
@@ -77,48 +75,81 @@ async function downloadAndParseM3U8(
   const m3u8Lines: Array<string> = [];
   for (const line of m3u8Text.split("\n")) {
     // whitespace lines and blank lines
-    if (line.length === 0 || line.trim().length === 0) {
+    if (line.length === 0 ||
+        line.trim().length === 0 ||
+        line === '#EXTM3U' ||
+        line.startsWith("#EXTINF")) {
       m3u8Lines.push(line);
       continue;
     }
+
+    const trimmedLine = line.trim();
 
     // comments and directives
     // TODO:  are there directives that also require file pulls, etc. that we care about?
     //        I know there are directives such as album art, etc. but not sure of any that
     //        are relevant to our interests.
-    if (line.trim().startsWith("#")) {
-      m3u8Lines.push(line);
+    if (trimmedLine.startsWith("#")) {
+      // There are only a few tags that contain URIs that we really care about:
+      // EXT-X-KEY, EXT-X-MEDIA, and EXT-X-SESSION-DATA. But three are enough that writing
+      // special case code isn't great, and we may add more in the future. As such we're
+      // going to Actually Parse EXT tags, find ones with URI components, fix those up, and
+      // inject them.
+
+      const extTags = parseExtTags(line);
+
+      const fixedKvs: Array<ExtTagKV> = [];
+      for (const [k, v] of extTags.kvs) {
+        // EXT tags don't allow lower-case but at the same time we probably don't want
+        // to accidentally munge intentionally-hosed files if we can avoid it.
+        //
+        // There are no great heuristics for "this looks like a URI", but all standard
+        // URIs seem to be called `URI`, so we'll go with it.
+        if (k.toUpperCase() === "URI" && v?.startsWith('"') && v?.endsWith('"')) {
+          if (!v) {
+            throw new Error(`URI in m3u8 ext tag '${line}' but no field. Can't meaningfully recover.`);
+          }
+
+          const dequoted = v.slice(1, -1);
+          const mediaUrl = canonicalizeUrl(m3u8Url, dequoted);
+
+          const archivedLocation = await handleFileWithinM3U8(
+            logger,
+            mediaUrl,
+            bucket,
+            bucketBasePath,
+            index,
+            visitedSet,
+            awaiters,
+            `${paddedIndex}-EXT-${k}-`
+          );
+
+          fixedKvs.push([k, `"${archivedLocation}"`]);
+        } else {
+          fixedKvs.push([k, v]);
+        }
+      }
+
+      m3u8Lines.push(extTagsToM3U8Format({ tagName: extTags.tagName, kvs: fixedKvs }));
       continue;
     }
 
     // pretty much anything else can be a valid URL, which makes this a spicy meatball.
     // we're going to assume validity here and let it explode later if something's wrong.
-    const ext = Path.extname(line);
+    const mediaUrl = canonicalizeUrl(m3u8Url, trimmedLine);
 
-    const mediaUrl = canonicalizeUrl(m3u8Url, line.trim());
-
-    if (ext === '.m3u8') {
-      logger.debug({ mediaUrl }, "looks like an m3u8; recursively parsing to upload.");
-      
-      const [newIndexNumber, subM3U8] = await downloadAndParseM3U8(
+    m3u8Lines.push(
+      await handleFileWithinM3U8(
         logger,
         mediaUrl,
         bucket,
         bucketBasePath,
         index,
         visitedSet,
-      );
-
-      m3u8Lines.push(`${newIndexNumber}.m3u8`);
-    } else {
-      const archiveFileName = `${uuidv4()}${ext}`;
-      const gcpArchivePath = `${bucketBasePath}/${archiveFileName}`;
-
-      logger.debug({ mediaUrl, gcpArchivePath }, 'file detected (we think), adding to m3u8.');
-
-      awaiters.push(archiveFile(logger, mediaUrl, bucket, gcpArchivePath));
-      m3u8Lines.push(archiveFileName);
-    }
+        awaiters,
+        `${paddedIndex}-FILE-`,
+      ),
+    );
   }
 
   await Promise.all(awaiters);
@@ -137,10 +168,38 @@ async function downloadAndParseM3U8(
   return [indexNumber, uploadedM3U8];
 }
 
-function canonicalizeUrl(m3u8Url: string, mediaUrl: string): string {
-  if (mediaUrl.startsWith("http://") || mediaUrl.startsWith("https://")) {
-    return mediaUrl;
-  }
+async function handleFileWithinM3U8(
+  logger: Logger,
+  referredUrl: string,
+  bucket: Bucket,
+  bucketBasePath: string,
+  index: Counter,
+  visitedSet: Set<string>,
+  awaiters: Array<Promise<any>>,
+  filePrefix: string,
+) {
+  const ext = Path.extname(referredUrl);
 
-  return Path.dirname(m3u8Url) + "/" + mediaUrl;
+  if (ext === '.m3u8') {
+    logger.debug({ referredUrl }, "looks like an m3u8; recursively parsing to upload.");
+    
+    const [newIndexNumber, subM3U8] = await downloadAndParseM3U8(
+      logger,
+      referredUrl,
+      bucket,
+      bucketBasePath,
+      index,
+      visitedSet,
+    );
+
+    return `${newIndexNumber}.m3u8`;
+  } else {
+    const archiveFileName = `${filePrefix}${uuidv4()}${ext}`;
+    const gcpArchivePath = `${bucketBasePath}/${archiveFileName}`;
+
+    logger.debug({ referredUrl, gcpArchivePath }, 'file detected (we think), adding to m3u8.');
+
+    awaiters.push(archiveFile(logger, referredUrl, bucket, gcpArchivePath));
+    return archiveFileName;
+  }
 }
