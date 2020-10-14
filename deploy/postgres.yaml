@@ -1,0 +1,60 @@
+---
+### POSTGRES SERVICE DEFINITION ###############################################
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: playbackproblems-postgres
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: playbackproblems-postgres
+
+---
+
+### POSTGRES STATEFUL SET/APPLICATION CONFIGURATION ###########################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: playbackproblems-postgres
+spec:
+  selector:
+    matchLabels:
+      app: playbackproblems-postgres
+  serviceName: postgres
+  replicas: 1
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 20Gi
+  template:
+    metadata:
+      labels:
+        app: playbackproblems-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13-alpine
+          imagePullPolicy: Always # do we actually want this?
+          args: []
+          env:
+            - name: PGDATA
+              value: /var/run/postgresql/data/pgdata
+            - name: POSTGRES_USER
+              value: playbackproblems
+            - name: POSTGRES_PASSWORD
+              value: changeme_immediately
+          volumeMounts:
+            - name: data
+              mountPath: /var/run/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: postgres
