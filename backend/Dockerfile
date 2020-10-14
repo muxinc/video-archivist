@@ -1,8 +1,15 @@
 FROM node:14-alpine
 
+RUN adduser --system --no-create-home appuser
+
 RUN mkdir /app
+RUN chown -R appuser /app
+
+USER appuser
+
 WORKDIR /app
 COPY /package.json /app/package.json
+COPY /yarn.lock /app/yarn.lock
 RUN yarn install
 
 # TODO: multi-stage? is it worth it?
