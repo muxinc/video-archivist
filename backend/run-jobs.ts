@@ -1,3 +1,5 @@
+import 'source-map-support';
+
 import Pino from 'pino';
 import { createConnection } from 'typeorm';
 import * as GetEnv from 'getenv';

@@ -1,3 +1,5 @@
+import 'source-map-support';
+
 import { ConnectionOptions } from 'typeorm';
 import * as GetEnv from 'getenv';
 
