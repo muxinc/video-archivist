@@ -8,12 +8,20 @@
     "dev:connect-db": "cd .. && yarn run -s dev:connect-db",
     "build": "tsc",
     "clean": "rm -rf ./dist",
-    "start:http": "node dist/run-http.ts",
+    "start:http": "node dist/run-http.js",
     "start:http:dev": "tsc-watch -p tsconfig.json --onSuccess \"node dist/run-http.js\"",
-    "start:jobs": "node dist/run-jobs.ts",
+    "start:jobs": "node dist/run-jobs.js",
     "start:jobs:dev": "tsc-watch -p tsconfig.json --onSuccess \"node dist/run-jobs.js\"",
     "test": "jest",
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/.bin/typeorm"
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/.bin/typeorm",
+
+    "git:tag": "/bin/echo -n $(git rev-parse --short HEAD) && /bin/echo -n $([[ -z $(git status -s) ]] || echo '-dirty')",
+    "container:latest-tag": "/bin/echo -n \"playbackproblems:latest\"",
+    "container:tag": "/bin/echo -n \"playbackproblems:$(/bin/echo -n $(git rev-parse --short HEAD) && /bin/echo -n $([[ -z $(git status -s) ]] || echo '-dirty'))\"",
+    "container:build": "docker build --tag playbackproblems:$(yarn run -s  git:tag) .",
+    "container:tag-as-latest": "docker tag $(yarn run -s container:tag) $(yarn run -s container:latest-tag) && docker tag $(yarn run -s container:tag) registry.localhost:5000/$(yarn run -s container:latest-tag)",
+    "container:push-local": "yarn run container:tag-as-latest && docker tag $(yarn run -s container:tag) registry.localhost:5000/$(yarn run -s container:tag) && docker push registry.localhost:5000/playbackproblems:latest && docker push registry.localhost:5000/$(yarn run -s container:tag)",
+    "deploy:local": "../deploy/apply-local.sh"
   },
   "devDependencies": {
     "@types/bull": "^3.14.2",

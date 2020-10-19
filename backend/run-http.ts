@@ -7,13 +7,15 @@ import { buildServer } from './http/server'
 
 const ormconfig: ConnectionOptions = require('./ormconfig');
 
+console.log("GITHUB TOKEN GO BRR:", process.env.GITHUB_ACCESS_TOKEN);
+
 (async () => {
   const server = await buildServer({
     hapi: {
       port: GetEnv.int('HAPI_PORT', 13000),
     },
     
-    prettyPrintLogs: true,
+    prettyPrintLogs: GetEnv.bool('PRETTY_PRINT_LOGS', false),
     dbOptions: ormconfig,
     githubAccessToken: GetEnv.string('GITHUB_ACCESS_TOKEN'),
     redisOptions: {

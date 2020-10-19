@@ -1,0 +1,285 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: playbackproblems-config
+data:
+  video-bucket-name: playbackproblems
+
+---
+### POSTGRES SERVICE DEFINITION ###############################################
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: playbackproblems-postgres
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: playbackproblems-postgres
+
+---
+
+### POSTGRES STATEFUL SET/APPLICATION CONFIGURATION ###########################
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: playbackproblems-postgres
+spec:
+  selector:
+    matchLabels:
+      app: playbackproblems-postgres
+  serviceName: postgres
+  replicas: 1
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 20Gi
+  template:
+    metadata:
+      labels:
+        app: playbackproblems-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13-alpine
+          imagePullPolicy: Always # do we actually want this?
+          args: []
+          env:
+            - name: PGDATA
+              value: /var/run/postgresql/data/pgdata
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: playbackproblems-postgres
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: playbackproblems-postgres
+                  key: password
+          volumeMounts:
+            - name: data
+              mountPath: /var/run/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: postgres
+
+---
+### REDIS SERVICE DEFINITION ##################################################
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: playbackproblems-redis
+spec:
+  ports:
+    - port: 6379
+      name: redis
+  clusterIP: None
+  selector:
+    app: playbackproblems-redis
+
+---
+
+### REDIS STATEFUL SET/APPLICATION CONFIGURATION ##############################
+# TODO: persistent volume claim?
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: playbackproblems-redis
+spec:
+  selector:
+    matchLabels:
+      app: playbackproblems-redis
+  serviceName: redis
+  replicas: 1
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
+  template:
+    metadata:
+      labels:
+        app: playbackproblems-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:5-alpine
+          imagePullPolicy: Always # do we actually want this?
+          args: []
+          env: []
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - containerPort: 6379
+              name: redis
+
+---
+### WEB SERVER SERVICE DEFINITION #############################################
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: playbackproblems-http
+spec:
+  ports:
+    - port: 13000
+      name: http
+  clusterIP: None
+  selector:
+    app: playbackproblems-http
+
+---
+### WEB SERVER DEPLOYMENT/APPLICATION CONFIGURATION ###########################
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playbackproblems-http
+  labels:
+    app: playbackproblems-http
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: playbackproblems-http
+  template:
+    metadata:
+      labels:
+        app: playbackproblems-http
+    spec:
+      volumes:
+        - name: google-credentials
+          secret:
+            secretName: playbackproblems-gcp
+      containers:
+        - name: playbackproblems-http
+          command: [ "yarn", "start:http" ]
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 384M
+            requests:
+              cpu: 250m
+          image: mux-devex/playbackproblems-backend:latest
+          ports:
+            - containerPort: 13000
+              name: http
+          volumeMounts:
+            - name: google-credentials
+              mountPath: "/google-credentials.json"
+              readOnly: true
+          env:
+            - name: DB_HOST
+              value: playbackproblems-postgres
+            - name: DB_PORT
+              value: '5432'
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                    name: playbackproblems-postgres
+                    key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                    name: playbackproblems-postgres
+                    key: password
+            - name: REDIS_HOST
+              value: playbackproblems-redis
+            - name: REDIS_PORT
+              value: '6379'
+            - name: VIDEO_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: playbackproblems-config
+                  key: video-bucket-name
+            - name: GITHUB_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                    name: playbackproblems-github
+                    key: access-token
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/google-credentials.json"
+
+---
+### WEB SERVER DEPLOYMENT/APPLICATION CONFIGURATION ###########################
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playbackproblems-jobs
+  labels:
+    app: playbackproblems-jobs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: playbackproblems-jobs
+  template:
+    metadata:
+      labels:
+        app: playbackproblems-jobs
+    spec:
+      volumes:
+        - name: google-credentials
+          secret:
+            secretName: playbackproblems-gcp
+      containers:
+        - name: playbackproblems-http
+          image: mux-devex/playbackproblems-backend:latest
+          command: [ "yarn", "start:jobs" ]
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512M
+            requests:
+              cpu: 250m
+          volumeMounts:
+            - name: google-credentials
+              mountPath: "/google-credentials.json"
+              readOnly: true
+          env:
+            - name: DB_HOST
+              value: playbackproblems-postgres
+            - name: DB_PORT
+              value: '5432'
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                    name: playbackproblems-postgres
+                    key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                    name: playbackproblems-postgres
+                    key: password
+            - name: REDIS_HOST
+              value: playbackproblems-redis
+            - name: REDIS_PORT
+              value: '6379'
+            - name: VIDEO_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: playbackproblems-config
+                  key: video-bucket-name
+            - name: GITHUB_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                    name: playbackproblems-github
+                    key: access-token
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/google-credentials.json"
