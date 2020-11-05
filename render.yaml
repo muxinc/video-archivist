@@ -1,79 +1,79 @@
 services:
-- name: http
+- name: playbackproblems-http
   type: web
   env: docker
   dockerfilePath: ./backend/Dockerfile
   dockerContext: ./backend
   region: oregon
   envVars:
-  - fromGroup: gcp-resources
-  - fromGroup: github
+  - fromGroup: playbackproblems-gcp-resources
+  - fromGroup: playbackproblems-github
   - key: REDIS_HOST
     fromService:
-      name: redis
+      name: playbackproblems-redis
       type: pserv
       property: host
   - key: REDIS_PORT
     fromService:
-      name: redis
+      name: playbackproblems-redis
       type: pserv
       property: port
   - key: DB_HOST
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: host
   - key: DB_PORT
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: port
   - key: DB_USERNAME
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: user
   - key: DB_PASSWORD
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: password
     
 
-- name: jobs
+- name: playbackproblems-jobs
   type: worker
   env: docker
   dockerfilePath: ./backend/Dockerfile
   dockerContext: ./backend
   region: oregon
   envVars:
-  - fromGroup: gcp-credentials
-  - fromGroup: gcp-resources
-  - fromGroup: github
+  - fromGroup: playbackproblems-gcp-credentials
+  - fromGroup: playbackproblems-gcp-resources
+  - fromGroup: playbackproblems-github
   - key: REDIS_HOST
     fromService:
-      name: redis
+      name: playbackproblems-redis
       type: pserv
       property: host
   - key: REDIS_PORT
     fromService:
-      name: redis
+      name: playbackproblems-redis
       type: pserv
       property: port
   - key: DB_HOST
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: host
   - key: DB_PORT
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: port
   - key: DB_USERNAME
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: user
   - key: DB_PASSWORD
     fromDatabase:
-      name: primary
+      name: playbackproblems-primary
       property: password
 
-- name: redis
+- name: playbackproblems-redis
   type: pserv
   env: docker
   region: oregon
@@ -84,22 +84,22 @@ services:
     sizeGB: 10
 
 databases:
-- name: primary
+- name: playbackproblems-primary
   databaseName: playbackproblems
   ipAllowList:
   - source: 96.233.63.33/32
     description: ed - FiOS
 
 envVarGroups:
-- name: gcp-credentials
+- name: playbackproblems-gcp-credentials
   envVars:
   - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
     sync: false
-- name: gcp-resources
+- name: playbackproblems-gcp-resources
   envVars:
   - key: VIDEO_BUCKET_NAME
     sync: false
-- name: github
+- name: playbackproblems-github
   envVars:
   - key: GITHUB_ACCESS_TOKEN
     sync: false
