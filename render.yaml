@@ -1,0 +1,99 @@
+services:
+- name: http
+  type: web
+  env: node
+  region: oregon
+  envVars:
+  - fromGroup: gcp-resources
+  - fromGroup: github
+  - key: REDIS_HOST
+    fromService:
+      name: redis
+      type: pserv
+      property: host
+  - key: REDIS_PORT
+    fromService:
+      name: redis
+      type: pserv
+      property: port
+  - key: DB_HOST
+    fromDatabase:
+      name: primary
+      property: host
+  - key: DB_PORT
+    fromDatabase:
+      name: primary
+      property: port
+  - key: DB_USERNAME
+    fromDatabase:
+      name: primary
+      property: user
+  - key: DB_PASSWORD
+    fromDatabase:
+      name: primary
+      property: password
+    
+
+- name: jobs
+  type: worker
+  env: node
+  region: oregon
+  envVars:
+  - fromGroup: gcp-credentials
+  - fromGroup: gcp-resources
+  - fromGroup: github
+  - key: REDIS_HOST
+    fromService:
+      name: redis
+      type: pserv
+      property: host
+  - key: REDIS_PORT
+    fromService:
+      name: redis
+      type: pserv
+      property: port
+  - key: DB_HOST
+    fromDatabase:
+      name: primary
+      property: host
+  - key: DB_PORT
+    fromDatabase:
+      name: primary
+      property: port
+  - key: DB_USERNAME
+    fromDatabase:
+      name: primary
+      property: user
+  - key: DB_PASSWORD
+    fromDatabase:
+      name: primary
+      property: password
+
+- name: redis
+  type: pserv
+  env: docker
+  region: oregon
+  repo: https://github.com/render-examples/redis.git
+  disk:
+    name: redis-data
+    mountPath: /var/lib/redis
+    sizeGB: 10
+
+databases:
+- name: primary
+  databaseName: playbackproblems
+  ipAllowList: []
+
+envVarGroups:
+- name: gcp-credentials
+  envVars:
+  - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
+    sync: false
+- name: gcp-resources
+  envVars:
+  - key: VIDEO_BUCKET_NAME
+    sync: false
+- name: github
+  envVars:
+  - key: GITHUB_ACCESS_TOKEN
+    sync: false

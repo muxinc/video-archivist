@@ -1,4 +1,5 @@
 # HOW TO DEPLOY #
+- **First**, make sure the `KUBECONFIG` env var is properly set.
 
 - store the following secrets based on external services:
     - `playbackproblems-github` - just the access token string, e.g.. `kubectl create secret generic playbackproblems-github --from-literal=access-token=$(echo $GITHUB_ACCESS_TOKEN)`
@@ -7,6 +8,7 @@
 - create and set a database username/password secret (same process as above but with a generated password):
     - `kubectl create secret generic playbackproblems-postgres --from-literal=username=playbackproblems --from-literal=password=$(head /dev/random | md5sum | cut -f1 -d' ')`
 
+- go run `tilt` from the root of the repo: `tilt up`
 
 ## Accessing Postgres ##
 You can access the Postgres node by spinning up a bash shell in the postgres pod.

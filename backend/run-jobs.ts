@@ -1,6 +1,7 @@
 import 'source-map-support';
 
 import Pino from 'pino';
+import * as fs from 'fs';
 import { createConnection } from 'typeorm';
 import * as GetEnv from 'getenv';
 import sleep from 'sleep-promise';
@@ -16,7 +17,19 @@ const LOGGER = Pino({
   
 });
 
+let tempGCPCredsPath: string | null = null;
+
 (async () => {
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    // google does not really give us an awesome way to specify a creds json as an env var
+
+    const tempDir = fs.mkdtempSync("pp-gcp-");
+    tempGCPCredsPath = `${tempDir}/gcp-credentials.json`;
+    fs.writeFileSync(tempGCPCredsPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON, { encoding: 'utf-8' });
+  
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = tempGCPCredsPath;
+  }
+  
   const REDIS_HOST = GetEnv.string('REDIS_HOST');
   const REDIS_PORT = GetEnv.int('REDIS_PORT', 6379);
 
@@ -62,4 +75,8 @@ const LOGGER = Pino({
 }).catch((err) => {
   LOGGER.error({ err }, "Process had an uncaught exception at the root.");
   process.exit(1);
+}).finally(() => {
+  if (tempGCPCredsPath) {
+    fs.unlinkSync(tempGCPCredsPath);
+  }
 })

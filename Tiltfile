@@ -1,4 +1,9 @@
-k8s_yaml('./deploy/k8s.yaml')
+k8s_yaml('./deploy/shared.yaml')
+
+if "DEPLOY_TARGET" not in os.environ:
+    raise "environment variable 'DEPLOY_TARGET' must be set."
+
+k8s_yaml('./deploy/' + os.environ['DEPLOY_TARGET'] + '.yaml')
 
 docker_build('mux-devex/playbackproblems-backend', 'backend')
 
