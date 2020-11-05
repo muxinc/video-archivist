@@ -1,7 +1,9 @@
 services:
 - name: http
   type: web
-  env: node
+  env: docker
+  dockerfilePath: ./backend/Dockerfile
+  dockerContext: ./backend
   region: oregon
   envVars:
   - fromGroup: gcp-resources
@@ -36,7 +38,9 @@ services:
 
 - name: jobs
   type: worker
-  env: node
+  env: docker
+  dockerfilePath: ./backend/Dockerfile
+  dockerContext: ./backend
   region: oregon
   envVars:
   - fromGroup: gcp-credentials
@@ -82,7 +86,9 @@ services:
 databases:
 - name: primary
   databaseName: playbackproblems
-  ipAllowList: []
+  ipAllowList:
+  - source: 96.233.63.33/32
+    description: ed - FiOS
 
 envVarGroups:
 - name: gcp-credentials
