@@ -7,8 +7,6 @@ import { buildServer } from './http/server'
 
 const ormconfig: ConnectionOptions = require('./ormconfig');
 
-console.log("GITHUB TOKEN GO BRR:", process.env.GITHUB_ACCESS_TOKEN);
-
 (async () => {
   const server = await buildServer({
     hapi: {
