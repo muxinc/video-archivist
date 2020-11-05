@@ -27,6 +27,10 @@ services:
     fromDatabase:
       name: playbackproblems-primary
       property: port
+  - key: DB_NAME
+    fromDatabase:
+      name: playbackproblems-primary
+      property: database
   - key: DB_USERNAME
     fromDatabase:
       name: playbackproblems-primary
@@ -66,6 +70,10 @@ services:
     fromDatabase:
       name: playbackproblems-primary
       property: port
+  - key: DB_NAME
+    fromDatabase:
+      name: playbackproblems-primary
+      property: database
   - key: DB_USERNAME
     fromDatabase:
       name: playbackproblems-primary
