@@ -13,6 +13,12 @@ import { GithubWebhookPayload } from '../types';
 export async function attachRoutes(server: Hapi.Server, opts: AppOptions) {
   server.route({
     method: 'GET',
+    path: '/ping',
+    handler: async (req, h) => ({ pong: true }),
+  });
+  
+  server.route({
+    method: 'GET',
     path: '/repos',
     options: {
       response: responseWith(Joi.array().items(Repo.RepoDTO)),
