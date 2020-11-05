@@ -3,7 +3,7 @@ FROM node:14-alpine
 RUN adduser --system --no-create-home appuser
 
 RUN mkdir /app
-RUN /tmp/.yarn-cache-100
+RUN mkdir /tmp/.yarn-cache-100
 
 RUN chown -R appuser /app
 RUN chown -R appuser /tmp/.yarn-cache-100
