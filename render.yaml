@@ -4,7 +4,7 @@ services:
   env: docker
   dockerfilePath: ./backend/Dockerfile
   dockerContext: ./backend
-  dockerCommand: yarn exec -s start:http
+  dockerCommand: yarn run -s start:http
   region: oregon
   envVars:
   - fromGroup: playbackproblems-gcp-resources
@@ -42,7 +42,7 @@ services:
   env: docker
   dockerfilePath: ./backend/Dockerfile
   dockerContext: ./backend
-  dockerCommand: yarn exec -s start:jobs
+  dockerCommand: yarn run -s start:jobs
   region: oregon
   envVars:
   - fromGroup: playbackproblems-gcp-credentials
