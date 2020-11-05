@@ -39,6 +39,8 @@ services:
     fromDatabase:
       name: playbackproblems-primary
       property: password
+  - key: GOOGLE_APPLICATION_CREDENTIALS
+    value: /etc/secrets/gcp-credentials.json
     
 
 - name: playbackproblems-jobs
@@ -82,6 +84,8 @@ services:
     fromDatabase:
       name: playbackproblems-primary
       property: password
+  - key: GOOGLE_APPLICATION_CREDENTIALS
+    value: /etc/secrets/gcp-credentials.json
 
 - name: playbackproblems-redis
   type: pserv
