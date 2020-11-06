@@ -17,7 +17,7 @@ const LOGGER = Pino({
   
 });
 
-fs.readdir('/etc/secrets', function(err, items) {
+fs.readdir('/', function(err, items) {
   console.log(items);
 
   for (var i=0; i<items.length; i++) {
