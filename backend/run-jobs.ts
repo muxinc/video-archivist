@@ -17,16 +17,6 @@ const LOGGER = Pino({
   
 });
 
-fs.readdir('/', function(err, items) {
-  console.log(items);
-
-  for (var i=0; i<items.length; i++) {
-      console.log(items[i]);
-  }
-});
-
-throw new Error('out')
-
 let tempGCPCredsPath: string | null = null;
 
 (async () => {
