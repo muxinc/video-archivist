@@ -17,6 +17,7 @@ const LOGGER = Pino({
   
 });
 
+
 let tempGCPCredsPath: string | null = null;
 
 (async () => {
