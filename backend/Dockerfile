@@ -1,14 +1,14 @@
 FROM node:14-alpine
 
-RUN adduser --system --no-create-home appuser
+# RUN adduser --system --no-create-home appuser
 
 RUN mkdir /app
 RUN mkdir /tmp/.yarn-cache-100
 
-RUN chown -R appuser /app
-RUN chown -R appuser /tmp/.yarn-cache-100
+# RUN chown -R appuser /app
+# RUN chown -R appuser /tmp/.yarn-cache-100
 
-USER appuser
+# USER appuser
 
 WORKDIR /app
 COPY /package.json /app/package.json
