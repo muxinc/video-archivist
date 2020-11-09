@@ -13,6 +13,7 @@ export async function archiveFile(
   url: string,
   bucket: Bucket,
   bucketFilePath: string,
+  storageUrlBase: string,
 ): Promise<string> {
   logger = logger.child({ phase: 'archiveFile', url, bucket: bucket.name, bucketFilePath, });
 
@@ -33,7 +34,7 @@ export async function archiveFile(
 
     const gcpOutputPipe = remoteGet.data.pipe(bucketStream, { end: true });
 
-    const archiveUrl = `https://storage.googleapis.com/${bucket.name}/${bucketFile.name}`;
+    const archiveUrl = `${storageUrlBase}/${bucket.name}/${bucketFile.name}`;
     logger.info({ archiveUrl }, "File archived to object storage.");
     return archiveUrl;
   } catch (err) {

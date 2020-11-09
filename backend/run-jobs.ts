@@ -21,6 +21,7 @@ const LOGGER = Pino({
 let tempGCPCredsPath: string | null = null;
 
 (async () => {
+  LOGGER.info("----- NEW APPLICATION START -----");
   if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
     // google does not really give us an awesome way to specify a creds json as an env var
 
@@ -55,6 +56,7 @@ let tempGCPCredsPath: string | null = null;
       auth: GetEnv.string('GITHUB_ACCESS_TOKEN'),
     }),
     gcpStorage.bucket(GetEnv.string('VIDEO_BUCKET_NAME')),
+    GetEnv.string('VIDEO_URL_BASE'),
   );
 
   let isRunning = true;

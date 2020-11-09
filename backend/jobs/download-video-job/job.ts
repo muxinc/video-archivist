@@ -21,6 +21,7 @@ export function makeDownloadVideoJobProcessor(
   typeorm: Connection,
   octokit: Octokit,
   videoStorageBucket: Bucket,
+  storageUrlBase: string,
 ) {
   const baseJobLogger = baseLogger.child({ job: DOWNLOAD_VIDEO_JOB_NAME });
   baseJobLogger.debug("Initializing.");
@@ -56,7 +57,7 @@ export function makeDownloadVideoJobProcessor(
           // we already have the video, so link it
           await linkVideo(logger, dataService, offer.repo!, video);
         } else {
-          video = await downloadNewVideo(logger, videoStorageBucket, dataService, offer);
+          video = await downloadNewVideo(logger, videoStorageBucket, dataService, offer, storageUrlBase);
         }
 
         await dataService.markArchiveOfferAsProcessed(offer.id);
@@ -94,6 +95,7 @@ async function downloadNewVideo(
   videoStorageBucket: Bucket,
   dataService: DataService,
   offer: ArchiveOffer,
+  storageUrlBase: string,
 ): Promise<Video> {
   logger = logger.child({ phase: 'downloadNewVideo' });
   logger.info({ url: offer.url }, "Fetching video for upload.");
@@ -104,13 +106,14 @@ async function downloadNewVideo(
   }
 
   const archiveUrl = offer.url.endsWith('m3u8')
-    ? await saveM3U8(logger, offer, videoStorageBucket)
+    ? await saveM3U8(logger, offer, videoStorageBucket, storageUrlBase)
     : await archiveFile(
       logger,
       offer.url,
       videoStorageBucket,
       // if we got something with a weird query string parameter, dump it
       `${ArchiveOffer.idToHash(offer.id)}${Path.extname(offer.url).split("?")[0]}`,
+      storageUrlBase,
     );
   
   const video = await dataService.createVideo({

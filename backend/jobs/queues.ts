@@ -35,8 +35,16 @@ export class Queues {
     typeorm: TypeORM.Connection,
     octokit: Octokit,
     videoStorageBucket: Bucket,
+    storageUrlBase: string,
   ) {
-    makeDownloadVideoJobProcessor(this.logger, this.videoDownloadQueue, typeorm, octokit, videoStorageBucket);
+    makeDownloadVideoJobProcessor(
+      this.logger,
+      this.videoDownloadQueue,
+      typeorm,
+      octokit,
+      videoStorageBucket,
+      storageUrlBase,
+    );
   }
 
   async stopProcessors() {

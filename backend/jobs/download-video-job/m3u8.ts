@@ -12,6 +12,7 @@ export async function saveM3U8(
   logger: Logger,
   offer: ArchiveOffer,
   bucket: Bucket,
+  storageUrlBase: string,
 ): Promise<string> {
   logger = logger.child({ phase: 'saveM3U8' });
 
@@ -22,9 +23,10 @@ export async function saveM3U8(
     offer.url,
     bucket,
     bucketBasePath,
+    storageUrlBase,
   );
 
-  const archiveUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+  const archiveUrl = `${storageUrlBase}/${bucket.name}/${file.name}`;
   return archiveUrl;
 }
 
@@ -33,6 +35,7 @@ async function downloadAndParseM3U8(
   m3u8Url: string,
   bucket: Bucket,
   bucketBasePath: string,
+  storageUrlBase: string,
   index: Counter = new Counter(),
   visitedSet: Set<string> = new Set(),
 ): Promise<[number, File]> {
@@ -118,6 +121,7 @@ async function downloadAndParseM3U8(
             mediaUrl,
             bucket,
             bucketBasePath,
+            storageUrlBase,
             index,
             visitedSet,
             awaiters,
@@ -144,6 +148,7 @@ async function downloadAndParseM3U8(
         mediaUrl,
         bucket,
         bucketBasePath,
+        storageUrlBase,
         index,
         visitedSet,
         awaiters,
@@ -173,6 +178,7 @@ async function handleFileWithinM3U8(
   referredUrl: string,
   bucket: Bucket,
   bucketBasePath: string,
+  storageUrlBase: string,
   index: Counter,
   visitedSet: Set<string>,
   awaiters: Array<Promise<any>>,
@@ -188,6 +194,7 @@ async function handleFileWithinM3U8(
       referredUrl,
       bucket,
       bucketBasePath,
+      storageUrlBase,
       index,
       visitedSet,
     );
@@ -199,7 +206,7 @@ async function handleFileWithinM3U8(
 
     logger.debug({ referredUrl, gcpArchivePath }, 'file detected (we think), adding to m3u8.');
 
-    awaiters.push(archiveFile(logger, referredUrl, bucket, gcpArchivePath));
+    awaiters.push(archiveFile(logger, referredUrl, bucket, gcpArchivePath, storageUrlBase));
     return archiveFileName;
   }
 }
