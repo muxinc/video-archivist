@@ -113,6 +113,8 @@ envVarGroups:
   envVars:
   - key: VIDEO_BUCKET_NAME
     sync: false
+  - key: VIDEO_URL_BASE
+    sync: false
 - name: playbackproblems-github
   envVars:
   - key: GITHUB_ACCESS_TOKEN
