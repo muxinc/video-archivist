@@ -26,7 +26,7 @@ export async function saveM3U8(
     storageUrlBase,
   );
 
-  const archiveUrl = `${storageUrlBase}/${bucket.name}/${file.name}`;
+  const archiveUrl = `${storageUrlBase}/${file.name}`;
   return archiveUrl;
 }
 

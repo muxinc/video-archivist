@@ -34,7 +34,7 @@ export async function archiveFile(
 
     const gcpOutputPipe = remoteGet.data.pipe(bucketStream, { end: true });
 
-    const archiveUrl = `${storageUrlBase}/${bucket.name}/${bucketFile.name}`;
+    const archiveUrl = `${storageUrlBase}/${bucketFile.name}`;
     logger.info({ archiveUrl }, "File archived to object storage.");
     return archiveUrl;
   } catch (err) {
