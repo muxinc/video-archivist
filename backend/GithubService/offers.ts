@@ -98,7 +98,7 @@ function templateOfferCommentBody(
   const offerBullets =
     offerWithTags.map(oft => {
       if ('save' in oft) {
-        return `- ${oft.save.url}: **@${botUsername} save ${ArchiveOffer.idToHash(oft.save.id)}**`;
+        return `- for ${oft.save.url}: say \`@${botUsername} save ${ArchiveOffer.idToHash(oft.save.id)}\``;
       } else {
         throw new Error("unrecognized offer in templating: " + JSON.stringify(oft));
       }
