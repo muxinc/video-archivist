@@ -29,7 +29,7 @@ const OFFER_COMMENT_HEADER =
   `to this issue with the following commands:`;
 
 export const SEARCH_PATTERN =
-  new RegExp(`(?<url>https?:\/\/.+\\.(?<ext>${VIDEO_FORMAT_EXTENSIONS.join('|')}))`, 'gi');
+  new RegExp(`(?<url>https?:\/\/\\S+\\.(?<ext>${VIDEO_FORMAT_EXTENSIONS.join('|')}))`, 'gi');
 
 export function parseBodyForURLs(payload: GithubWebhookPayload): Set<string> {
   const body = findBodyContent(payload);
